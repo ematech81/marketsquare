@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Inter, Space_Grotesk } from "next/font/google";
+import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { AuthProvider } from "@/lib/auth";
+import { CartProvider } from "@/lib/cart";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,8 +30,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <Header />
-          {children}
+          <CartProvider>
+            <Suspense fallback={<header className="h-16 border-b border-line bg-white" />}>
+              <Header />
+            </Suspense>
+            {children}
+            <Footer />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { buildQuery, Filters, SortSelect, type FilterValues } from "@/components/Filters";
 import ProductCard from "@/components/ProductCard";
-import { getCategories, getProducts, type ProductQuery } from "@/lib/catalog";
+import { getCategories, getProducts } from "@/lib/catalog";
+import { formatNaira } from "@/lib/format";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -9,126 +11,136 @@ export const metadata = { title: "All products | Square Market" };
 
 export default function ProductsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
-      <h1 className="mb-6 text-3xl font-bold">All products</h1>
-      <Suspense fallback={<p className="text-foreground/50">Loading products…</p>}>
+    <main className="mx-auto w-full max-w-[1280px] flex-1 px-6 pt-6 pb-14">
+      <Suspense fallback={<p className="text-muted">Loading products…</p>}>
         <Results searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
 async function Results({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const query: ProductQuery = {
+  const values: FilterValues = {
     q: first(sp.q),
-    category: first(sp.category),
-    sort: first(sp.sort),
+    categories: first(sp.category).split(",").filter(Boolean),
     minPrice: first(sp.minPrice),
     maxPrice: first(sp.maxPrice),
-    page: first(sp.page),
+    fourStars: first(sp.minRating) === "4",
+    inStock: first(sp.inStock) === "1",
+    sort: first(sp.sort) || "newest",
   };
+  const page = Math.max(1, parseInt(first(sp.page), 10) || 1);
 
   const [categories, list] = await Promise.all([
     getCategories().catch(() => []),
-    getProducts({ ...query, limit: 12 }).catch(() => null),
+    getProducts({
+      q: values.q,
+      category: values.categories.join(","),
+      minPrice: values.minPrice,
+      maxPrice: values.maxPrice,
+      minRating: values.fourStars ? "4" : "",
+      inStock: values.inStock ? "1" : "",
+      sort: values.sort,
+      page: String(page),
+      limit: 12,
+    }).catch(() => null),
   ]);
 
-  const pageLink = (page: number) => {
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries({ ...query, page: String(page) })) if (v) params.set(k, v);
-    return `/products?${params.toString()}`;
-  };
+  const selected = categories.filter((c) => values.categories.includes(c.slug));
+  const title = values.q
+    ? `Results for “${values.q}”`
+    : selected.length === 1
+      ? selected[0].name
+      : "All products";
 
-  const input = "w-full border border-foreground/30 bg-white px-3 py-2 outline-none focus:border-accent";
+  const chips = [
+    ...(values.q ? [`Search: ${values.q}`] : []),
+    ...selected.map((c) => c.name),
+    ...(values.minPrice || values.maxPrice
+      ? [`${values.minPrice ? formatNaira(Number(values.minPrice)) : "Any"} to ${values.maxPrice ? formatNaira(Number(values.maxPrice)) : "any"}`]
+      : []),
+    ...(values.fourStars ? ["4 stars and up"] : []),
+    ...(values.inStock ? ["In stock"] : []),
+  ];
+
+  const pageHref = (n: number) => buildQuery({ ...values, page: n });
+  const pageBtn = "inline-flex h-11 min-w-11 items-center justify-center rounded-sm text-sm";
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[220px_1fr]">
-      <form action="/products" className="space-y-4 text-sm">
-        <label className="block">
-          <span className="mb-1 block font-medium">Search</span>
-          <input name="q" defaultValue={query.q} placeholder="What are you looking for?" className={input} />
-        </label>
-        <label className="block">
-          <span className="mb-1 block font-medium">Category</span>
-          <select name="category" defaultValue={query.category ?? ""} className={input}>
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c.slug}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="block">
-            <span className="mb-1 block font-medium">Min price (₦)</span>
-            <input name="minPrice" type="number" min={0} defaultValue={query.minPrice} className={input} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block font-medium">Max price (₦)</span>
-            <input name="maxPrice" type="number" min={0} defaultValue={query.maxPrice} className={input} />
-          </label>
-        </div>
-        <label className="block">
-          <span className="mb-1 block font-medium">Sort by</span>
-          <select name="sort" defaultValue={query.sort ?? "newest"} className={input}>
-            <option value="newest">Newest</option>
-            <option value="price_asc">Price: low to high</option>
-            <option value="price_desc">Price: high to low</option>
-          </select>
-        </label>
-        <div className="flex gap-2">
-          <button type="submit" className="flex-1 bg-accent px-4 py-2 font-medium text-white hover:opacity-90">
-            Apply
-          </button>
-          <Link href="/products" className="border border-foreground/30 px-4 py-2 hover:border-accent">
-            Clear
-          </Link>
-        </div>
-      </form>
+    <>
+      <nav aria-label="Breadcrumb" className="mb-4 text-[13px] text-muted">
+        <Link href="/" className="hover:text-foreground">
+          Home
+        </Link>{" "}
+        / <span className="text-foreground">{title}</span>
+      </nav>
 
-      <div>
-        {list === null ? (
-          <p className="text-foreground/60">We could not load products right now. Please try again shortly.</p>
-        ) : list.products.length === 0 ? (
-          <p className="text-foreground/60">No products match your search. Try fewer filters.</p>
-        ) : (
-          <>
-            <p className="mb-4 text-sm text-foreground/60">
-              {list.total} {list.total === 1 ? "product" : "products"}
-            </p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3">
-              {list.products.map((p) => (
-                <ProductCard key={p.id} product={p} />
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
+        <div>
+          <h1 className="mb-1 text-4xl font-bold tracking-[-0.02em]">{title}</h1>
+          <p className="text-[15px] text-[#45474B]">
+            {list ? `Showing ${list.total} ${list.total === 1 ? "product" : "products"}` : ""}
+          </p>
+        </div>
+        <SortSelect values={values} />
+      </div>
+
+      <div className="flex flex-col items-start gap-8 lg:flex-row">
+        <Filters categories={categories} values={values} />
+
+        <section className="w-full min-w-0 flex-1">
+          {chips.length > 0 && (
+            <div className="mb-5 flex flex-wrap items-center gap-2 text-[13px]">
+              <span className="text-[#45474B]">Active filters:</span>
+              {chips.map((c) => (
+                <span key={c} className="rounded-sm bg-[#FBEAE4] px-2.5 py-1.5 font-medium text-[#8A3219]">
+                  {c}
+                </span>
               ))}
             </div>
-            {list.pages > 1 && (
-              <nav className="mt-10 flex items-center justify-between text-sm" aria-label="Pagination">
-                {list.page > 1 ? (
-                  <Link href={pageLink(list.page - 1)} className="border border-foreground/30 px-4 py-2 hover:border-accent">
-                    Previous
-                  </Link>
-                ) : (
-                  <span />
-                )}
-                <span className="text-foreground/60">
-                  Page {list.page} of {list.pages}
-                </span>
-                {list.page < list.pages ? (
-                  <Link href={pageLink(list.page + 1)} className="border border-foreground/30 px-4 py-2 hover:border-accent">
-                    Next
-                  </Link>
-                ) : (
-                  <span />
-                )}
-              </nav>
-            )}
-          </>
-        )}
+          )}
+
+          {list === null ? (
+            <p className="text-muted">We could not load products right now. Please try again shortly.</p>
+          ) : list.products.length === 0 ? (
+            <p className="rounded-sm border border-line bg-white p-6 text-[#45474B]">
+              No products match your filters. Try removing some.
+            </p>
+          ) : (
+            <>
+              <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
+                {list.products.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+
+              {list.pages > 1 && (
+                <nav aria-label="Pagination" className="mt-10 flex flex-wrap justify-center gap-2">
+                  {Array.from({ length: list.pages }, (_, i) => i + 1).map((n) =>
+                    n === list.page ? (
+                      <span key={n} aria-current="page" className={`${pageBtn} bg-foreground font-semibold text-white`}>
+                        {n}
+                      </span>
+                    ) : (
+                      <Link key={n} href={pageHref(n)} className={`${pageBtn} border border-[#C6C6CB] bg-white font-medium hover:border-foreground`}>
+                        {n}
+                      </Link>
+                    ),
+                  )}
+                  {list.page < list.pages && (
+                    <Link href={pageHref(list.page + 1)} className={`${pageBtn} border border-[#C6C6CB] bg-white px-4 font-medium hover:border-foreground`}>
+                      Next
+                    </Link>
+                  )}
+                </nav>
+              )}
+            </>
+          )}
+        </section>
       </div>
-    </div>
+    </>
   );
 }

@@ -8,15 +8,15 @@ export default function Gallery({ images, title }: { images: { url: string }[]; 
 
   if (images.length === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center bg-foreground/5 text-foreground/40">
-        No image
+      <div className="flex aspect-square items-center justify-center rounded-sm border border-line bg-surface">
+        <span className="block size-16 border-[3px] border-[#C6C6CB]" />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="relative aspect-square bg-foreground/5">
+    <div className="flex flex-col gap-3">
+      <div className="relative aspect-square rounded-sm border border-line bg-surface">
         <Image
           src={images[active].url}
           alt={title}
@@ -27,17 +27,19 @@ export default function Gallery({ images, title }: { images: { url: string }[]; 
         />
       </div>
       {images.length > 1 && (
-        <div className="mt-3 grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 gap-3">
           {images.map((img, i) => (
             <button
               key={img.url}
               type="button"
               onClick={() => setActive(i)}
-              aria-label={`Show image ${i + 1}`}
+              aria-label={`Photo ${i + 1}${i === active ? ", selected" : ""}`}
               aria-current={i === active}
-              className={`relative aspect-square border-2 ${i === active ? "border-accent" : "border-transparent"}`}
+              className={`relative aspect-square cursor-pointer rounded-sm bg-surface p-0 ${
+                i === active ? "border-2 border-accent" : "border border-line"
+              }`}
             >
-              <Image src={img.url} alt="" fill sizes="80px" className="object-cover" />
+              <Image src={img.url} alt="" fill sizes="120px" className="object-cover" />
             </button>
           ))}
         </div>

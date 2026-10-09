@@ -28,6 +28,8 @@ export type ProductQuery = {
   sort?: string;
   minPrice?: string;
   maxPrice?: string;
+  minRating?: string;
+  inStock?: string;
   page?: string;
 };
 
