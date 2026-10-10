@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { useCart, type CartLine } from "@/lib/cart";
 import { formatNaira } from "@/lib/format";
 import { toApiPhone, toLocalPhone } from "@/lib/phone";
+import { DEFAULT_SETTINGS, type StoreSettings } from "@/lib/settings";
 
 type Zone = { state: string; fee: number; estimatedDays: number };
 
@@ -31,11 +32,15 @@ export default function CheckoutPage() {
   const { user, token, loading } = useAuth();
   const { cart, setQuantity, remove } = useCart();
   const [zones, setZones] = useState<Zone[] | null>(null);
+  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
   const [state, setState] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    api<StoreSettings>("/settings")
+      .then(setSettings)
+      .catch(() => setSettings(DEFAULT_SETTINGS));
     api<{ zones: Zone[] }>("/delivery-zones")
       .then((r) => setZones(r.zones))
       .catch(() => setZones([]));
@@ -76,7 +81,8 @@ export default function CheckoutPage() {
   const zone = zones?.find((z) => z.state === state);
   const delivery = zone ? zone.fee * groups.length : null;
   const total = delivery !== null ? cart.subtotal + delivery : null;
-  const blocked = cart.items.some((i) => i.issue);
+  const shortBy = Math.max(0, settings.minOrderAmount - cart.subtotal);
+  const blocked = cart.items.some((i) => i.issue) || shortBy > 0;
 
   const run = async (fn: () => Promise<void>) => {
     setError("");
@@ -121,6 +127,14 @@ export default function CheckoutPage() {
     <div className="flex flex-wrap items-start gap-8">
       <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-6">
         <ErrorText message={error} />
+        {shortBy > 0 && (
+          <p role="alert" className="rounded-sm border border-[#B42318] bg-[#FEF3F2] p-4 text-sm text-[#B42318]">
+            The minimum order is {formatNaira(settings.minOrderAmount)}. Add {formatNaira(shortBy)} more to check out.{" "}
+            <Link href="/products" className="font-semibold underline">
+              Continue shopping
+            </Link>
+          </p>
+        )}
 
         <section className={panel}>
           <h2 className={panelTitle}>1. Your cart</h2>
@@ -247,7 +261,22 @@ export default function CheckoutPage() {
         <Button type="submit" form="checkout-form" busy={busy} disabled={blocked} className="h-14 text-[17px]">
           {total !== null ? `Pay ${formatNaira(total)}` : "Continue to payment"}
         </Button>
-        {blocked && <p className="text-center text-[13px] text-[#B42318]">Fix the items marked above to continue.</p>}
+        {blocked && (
+          <p className="text-center text-[13px] text-[#B42318]">
+            {shortBy > 0 ? `Add ${formatNaira(shortBy)} more to reach the minimum order.` : "Fix the items marked above to continue."}
+          </p>
+        )}
+        <p className="text-center text-[13px] leading-normal text-muted">
+          By paying you agree to the{" "}
+          <Link href="/terms" className="text-accent-ink underline">
+            terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/delivery-and-returns" className="text-accent-ink underline">
+            return policy
+          </Link>
+          .
+        </p>
       </aside>
     </div>,
   );

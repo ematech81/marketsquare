@@ -8,6 +8,7 @@ import DeliveryCard from "@/components/DeliveryCard";
 import Gallery from "@/components/Gallery";
 import ReviewsSection from "@/components/ReviewsSection";
 import { getProduct, getProducts } from "@/lib/catalog";
+import { getSettings } from "@/lib/settings";
 import { formatNaira } from "@/lib/format";
 
 type Params = Promise<{ slug: string }>;
@@ -45,6 +46,7 @@ async function Details({ params }: { params: Params }) {
       ? Math.round((1 - product.price / product.compareAtPrice) * 100)
       : 0;
 
+  const settings = await getSettings();
   const related = await getProducts({ category: product.category.slug, limit: 5 })
     .then((r) => r.products.filter((p) => p.id !== product.id).slice(0, 4))
     .catch(() => []);
@@ -109,6 +111,19 @@ async function Details({ params }: { params: Params }) {
                 <span aria-hidden>+</span>
               </summary>
               <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-line text-[#45474B]">{product.description}</p>
+            </details>
+            <details className="border-b border-line py-3.5">
+              <summary className="flex cursor-pointer list-none justify-between text-[15px] font-semibold [&::-webkit-details-marker]:hidden">
+                <span>Delivery and returns</span>
+                <span aria-hidden>+</span>
+              </summary>
+              <p className="mt-3 text-[15px] leading-relaxed text-[#45474B]">
+                We deliver to you ourselves. Orders must total at least {formatNaira(settings.minOrderAmount)}. You can return an item
+                within {settings.returnDays} days of delivery.{" "}
+                <Link href="/delivery-and-returns" className="font-semibold text-accent-ink underline">
+                  Read the full policy
+                </Link>
+              </p>
             </details>
           </div>
         </section>

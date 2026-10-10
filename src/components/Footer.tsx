@@ -26,6 +26,18 @@ export default function Footer() {
             </Link>
           </div>
           <div className="flex flex-col gap-2.5">
+            <strong>Help</strong>
+            <Link href="/delivery-and-returns" className={linkClass}>
+              Delivery and returns
+            </Link>
+            <Link href="/terms" className={linkClass}>
+              Terms
+            </Link>
+            <Link href="/privacy" className={linkClass}>
+              Privacy
+            </Link>
+          </div>
+          <div className="flex flex-col gap-2.5">
             <strong>Sell</strong>
             <Link href="/become-a-vendor" className={linkClass}>
               Become a vendor

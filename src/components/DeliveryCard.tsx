@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { formatNaira } from "@/lib/format";
+import { DEFAULT_SETTINGS, type StoreSettings } from "@/lib/settings";
 
 type Zone = { state: string; fee: number; estimatedDays: number };
 
@@ -13,8 +14,12 @@ export default function DeliveryCard() {
   const [zones, setZones] = useState<Zone[] | null>(null);
   const [state, setState] = useState("");
   const [changing, setChanging] = useState(false);
+  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
+    api<StoreSettings>("/settings")
+      .then(setSettings)
+      .catch(() => setSettings(DEFAULT_SETTINGS));
     api<{ zones: Zone[] }>("/delivery-zones")
       .then(({ zones: z }) => {
         setZones(z);
@@ -81,6 +86,11 @@ export default function DeliveryCard() {
           <strong>Delivery</strong>
           <span className="text-[#45474B]">Delivery fees are shown at checkout.</span>
         </>
+      )}
+      {settings.minOrderAmount > 0 && (
+        <span className="mt-1 border-t border-line pt-2 text-[13px] text-[#45474B]">
+          Minimum order {formatNaira(settings.minOrderAmount)}. Returns accepted within {settings.returnDays} days of delivery.
+        </span>
       )}
     </div>
   );
