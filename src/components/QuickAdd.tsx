@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 
 const button =
-  "flex h-11 w-full items-center justify-center rounded-sm bg-foreground text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50";
+  "flex h-11 w-full cursor-pointer items-center justify-center rounded-sm bg-foreground text-sm font-semibold text-white transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-foreground disabled:hover:text-white motion-reduce:transition-none";
 
 // The "Add to cart" button on a product card. A product with options (like Size) needs the buyer to choose first,
 // so it sends them to the product page instead.

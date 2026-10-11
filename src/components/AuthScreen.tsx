@@ -186,7 +186,11 @@ function VendorCard() {
       <section className={shell}>
         {title}
         <p className="rounded-sm border border-line bg-[#F8F9FA] p-4 text-sm">
-          Your vendor account is approved. The vendor dashboard is coming soon.
+          Your vendor account is approved.{" "}
+          <a href={process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:3001"} className="font-semibold text-accent-ink underline">
+            Open your vendor dashboard
+          </a>{" "}
+          to list products and manage orders.
         </p>
       </section>
     );

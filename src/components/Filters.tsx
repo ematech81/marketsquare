@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export type FilterValues = {
   q: string;
   categories: string[];
+  vendors: string[];
   minPrice: string;
   maxPrice: string;
   fourStars: boolean;
@@ -17,6 +18,7 @@ export function buildQuery(v: Partial<FilterValues> & { page?: number }) {
   const p = new URLSearchParams();
   if (v.q) p.set("q", v.q);
   if (v.categories?.length) p.set("category", v.categories.join(","));
+  if (v.vendors?.length) p.set("vendor", v.vendors.join(","));
   if (v.minPrice) p.set("minPrice", v.minPrice);
   if (v.maxPrice) p.set("maxPrice", v.maxPrice);
   if (v.fourStars) p.set("minRating", "4");
@@ -35,9 +37,12 @@ const priceInput =
 
 export function Filters({
   categories,
+  vendors = [],
   values,
 }: {
   categories: { name: string; slug: string }[];
+  // "house" is the store's own products. Only shown when vendors are selling.
+  vendors?: { id: string; name: string }[];
   values: FilterValues;
 }) {
   const router = useRouter();
@@ -70,6 +75,27 @@ export function Filters({
                 }
               />
               {c.name}
+            </label>
+          ))}
+        </fieldset>
+      )}
+
+      {vendors.length > 0 && (
+        <fieldset className="flex flex-col gap-1 border-0 p-0">
+          <legend className={legend}>Vendor</legend>
+          {[{ id: "house", name: "Square Market" }, ...vendors].map((v) => (
+            <label key={v.id} className={check}>
+              <input
+                type="checkbox"
+                className={box}
+                checked={values.vendors.includes(v.id)}
+                onChange={(e) =>
+                  go({
+                    vendors: e.target.checked ? [...values.vendors, v.id] : values.vendors.filter((x) => x !== v.id),
+                  })
+                }
+              />
+              {v.name}
             </label>
           ))}
         </fieldset>

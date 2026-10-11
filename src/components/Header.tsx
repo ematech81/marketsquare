@@ -9,6 +9,8 @@ import { useCart } from "@/lib/cart";
 
 type Category = { _id: string; name: string; slug: string };
 
+const DASHBOARD_URL = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:3001";
+
 const wrap = "mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-8 gap-y-3 px-6 py-2.5 min-h-16";
 
 function Logo() {
@@ -125,6 +127,11 @@ export default function Header() {
               <Link href="/orders" className={`${navLink} px-3`}>
                 My orders
               </Link>
+              {user.role === "vendor" && (
+                <a href={DASHBOARD_URL} className={`${navLink} px-3`}>
+                  Vendor dashboard
+                </a>
+              )}
               <button onClick={signOut} className={`${navLink} px-3`}>
                 Sign out
               </button>

@@ -17,7 +17,11 @@ export default function BuyBox({ productId, inStock, stock, variants }: Props) {
   const { user, loading } = useAuth();
   const { add } = useCart();
   const router = useRouter();
-  const [chosen, setChosen] = useState<Record<string, string>>({});
+  // An option with only one choice (like a single colour) starts selected, so buyers do not have to click it.
+  const [chosen, setChosen] = useState<Record<string, string>>(() =>
+    Object.fromEntries(variants.filter((v) => v.options.length === 1).map((v) => [v.name, v.options[0]])),
+  );
+  const [missing, setMissing] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState<"cart" | "buy" | null>(null);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -25,11 +29,13 @@ export default function BuyBox({ productId, inStock, stock, variants }: Props) {
   const maxQty = Math.min(stock, 20);
 
   async function addToCart(then: "stay" | "checkout") {
-    const missing = variants.find((v) => !chosen[v.name]);
-    if (missing) {
-      setMessage({ kind: "error", text: `Choose a ${missing.name.toLowerCase()}` });
+    const unpicked = variants.find((v) => !chosen[v.name]);
+    if (unpicked) {
+      setMissing(unpicked.name);
+      setMessage({ kind: "error", text: `Please choose a ${unpicked.name.toLowerCase()} above, then add to cart.` });
       return;
     }
+    setMissing(null);
     setBusy(then === "stay" ? "cart" : "buy");
     setMessage(null);
     try {
@@ -47,7 +53,7 @@ export default function BuyBox({ productId, inStock, stock, variants }: Props) {
     <div className="flex flex-col gap-5">
       {variants.map((v) => (
         <fieldset key={v.name} className="border-0 p-0">
-          <legend className="mb-2.5 p-0 text-sm font-semibold">
+          <legend className={`mb-2.5 p-0 text-sm font-semibold capitalize ${missing === v.name ? "text-[#B42318]" : ""}`}>
             {v.name}
             {chosen[v.name] ? `: ${chosen[v.name]}` : ""}
           </legend>
@@ -56,7 +62,11 @@ export default function BuyBox({ productId, inStock, stock, variants }: Props) {
               <label
                 key={o}
                 className={`inline-flex min-h-11 cursor-pointer items-center rounded-sm bg-white px-5 text-sm ${
-                  chosen[v.name] === o ? "border-2 border-foreground font-semibold" : "border border-[#C6C6CB] font-medium"
+                  chosen[v.name] === o
+                    ? "border-2 border-foreground font-semibold"
+                    : missing === v.name
+                      ? "border-2 border-[#B42318] font-medium"
+                      : "border border-[#C6C6CB] font-medium"
                 }`}
               >
                 <input
@@ -64,7 +74,11 @@ export default function BuyBox({ productId, inStock, stock, variants }: Props) {
                   name={v.name}
                   value={o}
                   checked={chosen[v.name] === o}
-                  onChange={() => setChosen((c) => ({ ...c, [v.name]: o }))}
+                  onChange={() => {
+                    setChosen((c) => ({ ...c, [v.name]: o }));
+                    setMissing(null);
+                    setMessage(null);
+                  }}
                   className="sr-only"
                 />
                 {o}

@@ -42,6 +42,9 @@ export default function Footer() {
             <Link href="/become-a-vendor" className={linkClass}>
               Become a vendor
             </Link>
+            <a href={process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:3001"} className={linkClass}>
+              Vendor dashboard
+            </a>
           </div>
         </div>
       </div>

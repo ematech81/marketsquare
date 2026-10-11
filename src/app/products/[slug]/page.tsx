@@ -71,7 +71,13 @@ async function Details({ params }: { params: Params }) {
 
         <section className="flex min-w-0 flex-1 basis-[420px] flex-col gap-5">
           <div className="flex flex-col gap-2.5">
-            <span className="text-sm font-semibold text-accent-ink">Sold by {product.seller.name}</span>
+            {product.seller.id ? (
+              <Link href={`/stores/${product.seller.id}`} className="text-sm font-semibold text-accent-ink hover:text-foreground">
+                Sold by {product.seller.name}
+              </Link>
+            ) : (
+              <span className="text-sm font-semibold text-accent-ink">Sold by {product.seller.name}</span>
+            )}
             <h1 className="text-[34px] leading-[1.15] font-bold tracking-[-0.02em]">{product.title}</h1>
             {product.ratingCount > 0 && (
               <div className="text-sm font-semibold text-accent-ink">
@@ -102,6 +108,11 @@ async function Details({ params }: { params: Params }) {
                 {product.seller.id ? "Approved vendor" : "Sold and delivered by Square Market"}
               </span>
             </div>
+            {product.seller.id && (
+              <Link href={`/stores/${product.seller.id}`} className="text-sm font-semibold text-accent-ink hover:text-foreground">
+                Visit store
+              </Link>
+            )}
           </div>
 
           <div className="border-t border-line">

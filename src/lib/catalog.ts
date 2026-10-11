@@ -30,6 +30,7 @@ export type ProductQuery = {
   maxPrice?: string;
   minRating?: string;
   inStock?: string;
+  vendor?: string;
   page?: string;
 };
 

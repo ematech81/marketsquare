@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import ProductCard from "@/components/ProductCard";
 import { getCategories, getProducts } from "@/lib/catalog";
+import { getStores } from "@/lib/stores";
 
 // Tile colours from the design: dark, light, accent, light.
 const TILES = [
@@ -114,9 +115,10 @@ async function Hero() {
 }
 
 async function Catalog() {
-  const [categories, latest] = await Promise.all([
+  const [categories, latest, stores] = await Promise.all([
     getCategories().catch(() => []),
     getProducts({ limit: 8 }).catch(() => null),
+    getStores(),
   ]);
 
   return (
@@ -160,6 +162,31 @@ async function Catalog() {
           </div>
         )}
       </section>
+
+      {stores.length > 0 && (
+        <section className="mx-auto max-w-[1280px] px-6 pt-4 pb-14">
+          <h2 className="mb-6 text-[28px] font-semibold tracking-tight">Shop by vendor</h2>
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
+            {stores.map((s) => (
+              <Link
+                key={s.id}
+                href={`/stores/${s.id}`}
+                className="flex items-center gap-4 rounded-sm border border-line bg-white p-5 text-foreground hover:border-foreground"
+              >
+                <span className="flex size-12 shrink-0 items-center justify-center bg-foreground font-display text-xl font-bold text-white">
+                  {s.name.charAt(0)}
+                </span>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-base font-semibold">{s.name}</span>
+                  <span className="text-[13px] text-muted">
+                    {s.category} · {s.city}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

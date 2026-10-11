@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { buildQuery, Filters, SortSelect, type FilterValues } from "@/components/Filters";
 import ProductCard from "@/components/ProductCard";
 import { getCategories, getProducts } from "@/lib/catalog";
+import { getStores } from "@/lib/stores";
 import { formatNaira } from "@/lib/format";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -26,6 +27,7 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
   const values: FilterValues = {
     q: first(sp.q),
     categories: first(sp.category).split(",").filter(Boolean),
+    vendors: first(sp.vendor).split(",").filter(Boolean),
     minPrice: first(sp.minPrice),
     maxPrice: first(sp.maxPrice),
     fourStars: first(sp.minRating) === "4",
@@ -34,11 +36,13 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
   };
   const page = Math.max(1, parseInt(first(sp.page), 10) || 1);
 
-  const [categories, list] = await Promise.all([
+  const [categories, stores, list] = await Promise.all([
     getCategories().catch(() => []),
+    getStores(),
     getProducts({
       q: values.q,
       category: values.categories.join(","),
+      vendor: values.vendors.join(","),
       minPrice: values.minPrice,
       maxPrice: values.maxPrice,
       minRating: values.fourStars ? "4" : "",
@@ -59,6 +63,7 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
   const chips = [
     ...(values.q ? [`Search: ${values.q}`] : []),
     ...selected.map((c) => c.name),
+    ...values.vendors.map((v) => (v === "house" ? "Square Market" : (stores.find((s) => s.id === v)?.name ?? "Vendor"))),
     ...(values.minPrice || values.maxPrice
       ? [`${values.minPrice ? formatNaira(Number(values.minPrice)) : "Any"} to ${values.maxPrice ? formatNaira(Number(values.maxPrice)) : "any"}`]
       : []),
@@ -89,7 +94,7 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
       </div>
 
       <div className="flex flex-col items-start gap-8 lg:flex-row">
-        <Filters categories={categories} values={values} />
+        <Filters categories={categories} vendors={stores.map((s) => ({ id: s.id, name: s.name }))} values={values} />
 
         <section className="w-full min-w-0 flex-1">
           {chips.length > 0 && (

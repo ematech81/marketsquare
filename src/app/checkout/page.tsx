@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { useCart, type CartLine } from "@/lib/cart";
 import { formatNaira } from "@/lib/format";
 import { toApiPhone, toLocalPhone } from "@/lib/phone";
+import { NIGERIA_STATES } from "@/lib/states";
 import { DEFAULT_SETTINGS, type StoreSettings } from "@/lib/settings";
 
 type Zone = { state: string; fee: number; estimatedDays: number };
@@ -215,11 +216,15 @@ export default function CheckoutPage() {
               <option value="" disabled>
                 Choose your state
               </option>
-              {zones?.map((z) => (
-                <option key={z.state} value={z.state}>
-                  {z.state}
-                </option>
-              ))}
+              {/* Every state is listed. States we do not deliver to yet are greyed out. */}
+              {NIGERIA_STATES.map((name) => {
+                const available = zones?.some((z) => z.state === name) ?? false;
+                return (
+                  <option key={name} value={name} disabled={!available}>
+                    {available ? name : `${name} (not available yet)`}
+                  </option>
+                );
+              })}
             </SelectField>
             <Field compact label="City / local government area" name="city" required />
             <div className="col-span-full">
@@ -227,7 +232,7 @@ export default function CheckoutPage() {
             </div>
             {zones?.length === 0 && (
               <p className="col-span-full text-sm text-[#B42318]">
-                We are not taking orders yet. Delivery states have not been set up.
+                We cannot take orders yet because delivery fees have not been set up. Please check back soon.
               </p>
             )}
           </form>
