@@ -11,12 +11,20 @@ export type Product = {
   category: { name: string; slug: string };
   price: number;
   compareAtPrice?: number;
-  images: { url: string; publicId?: string }[];
+  images: { url: string; publicId?: string; alt?: string }[];
   variants: { name: string; options: string[] }[];
   inStock: boolean;
   stock: number;
   ratingAverage: number;
   ratingCount: number;
+  brand?: string;
+  sku?: string;
+  gtin?: string;
+  tags: string[];
+  details: { label: string; value: string }[];
+  seoTitle?: string;
+  seoDescription?: string;
+  updatedAt: string;
   seller: { id: string | null; name: string };
 };
 

@@ -27,7 +27,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {image ? (
           <Image
             src={image.url}
-            alt={product.title}
+            alt={image.alt || product.title}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             className="object-contain p-5 mix-blend-multiply transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
-export default function Gallery({ images, title }: { images: { url: string }[]; title: string }) {
+export default function Gallery({ images, title }: { images: { url: string; alt?: string }[]; title: string }) {
   const [active, setActive] = useState(0);
 
   if (images.length === 0) {
@@ -19,7 +19,7 @@ export default function Gallery({ images, title }: { images: { url: string }[]; 
       <div className="relative aspect-square rounded-sm border border-line bg-surface">
         <Image
           src={images[active].url}
-          alt={title}
+          alt={images[active].alt || (active === 0 ? title : `${title}, photo ${active + 1}`)}
           fill
           priority
           sizes="(min-width: 1024px) 50vw, 100vw"
@@ -39,7 +39,7 @@ export default function Gallery({ images, title }: { images: { url: string }[]; 
                 i === active ? "border-2 border-accent" : "border border-line"
               }`}
             >
-              <Image src={img.url} alt="" fill sizes="120px" className="object-cover" />
+              <Image src={img.url} alt={img.alt || `${title}, photo ${i + 1}`} fill sizes="120px" className="object-cover" />
             </button>
           ))}
         </div>
