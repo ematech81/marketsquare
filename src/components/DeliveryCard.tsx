@@ -34,6 +34,19 @@ export default function DeliveryCard() {
       .catch(() => setZones([]));
   }, []);
 
+  // The header's "Delivering to" picker saves the choice and announces it.
+  useEffect(() => {
+    const follow = () => {
+      try {
+        setState(localStorage.getItem(KEY) ?? "");
+      } catch {
+        // storage can be blocked
+      }
+    };
+    window.addEventListener("sm-state-change", follow);
+    return () => window.removeEventListener("sm-state-change", follow);
+  }, []);
+
   if (zones === null) return null;
 
   const zone = zones.find((z) => z.state === state);

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api } from "./api";
+import { useHydrated } from "./hydrated";
 
 export type User = {
   id: string;
@@ -65,6 +66,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [load]);
 
+
+  // If you sign in or out in another tab, this tab follows, so every tab always shows the same account.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === TOKEN_KEY) load(e.newValue);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [load]);
+
   const start = async (path: string, body: object) => {
     const res = await api<{ token: string }>(path, { method: "POST", body });
     localStorage.setItem(TOKEN_KEY, res.token);
@@ -90,8 +101,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
+export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
+  // Checked here, in every component that asks, because parts of a page can attach to the server's HTML at different
+  // moments. While a component attaches it sees the same "still checking" state the server drew, then the real one.
+  const hydrated = useHydrated();
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-  return ctx;
+  return hydrated ? ctx : { ...ctx, user: null, vendor: null, token: null, loading: true };
 }

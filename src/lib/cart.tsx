@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api } from "./api";
 import { useAuth } from "./auth";
+import { useHydrated } from "./hydrated";
 
 export type CartLine = {
   id: string;
@@ -63,8 +64,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
-export function useCart() {
+export function useCart(): CartState {
   const ctx = useContext(CartContext);
+  const hydrated = useHydrated();
   if (!ctx) throw new Error("useCart must be used inside CartProvider");
-  return ctx;
+  // See useAuth: the first thing drawn matches the server's page, then the real cart appears.
+  return hydrated ? ctx : { ...ctx, cart: empty };
 }

@@ -55,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(SITE_DATA) }} />
         <AuthProvider>
           <CartProvider>
-            <Suspense fallback={<header className="h-16 border-b border-line bg-white" />}>
+            <Suspense fallback={<header className="h-[6.5rem] bg-foreground md:h-[6.25rem]" />}>
               <Header />
             </Suspense>
             {children}

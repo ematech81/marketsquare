@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import HeroCarousel from "@/components/HeroCarousel";
 import ProductCard from "@/components/ProductCard";
+import { getBanners } from "@/lib/banners";
 import { getCategories, getProducts } from "@/lib/catalog";
 import { getStores } from "@/lib/stores";
 
@@ -109,8 +111,10 @@ function HeroText({ tiles }: { tiles: Tile[] | null }) {
   );
 }
 
+// The admin's banners when there are any. Otherwise the welcome text with category tiles.
 async function Hero() {
-  const categories = await getCategories().catch(() => []);
+  const [banners, categories] = await Promise.all([getBanners(), getCategories().catch(() => [])]);
+  if (banners.length > 0) return <HeroCarousel banners={banners} />;
   return <HeroText tiles={categories.slice(0, 4)} />;
 }
 

@@ -1,3 +1,4 @@
+﻿/* eslint-disable @typescript-eslint/no-unused-vars */
 import ReactMarkdown from "react-markdown";
 import type { ComponentProps } from "react";
 
