@@ -37,7 +37,7 @@ export default function Header() {
     );
   }
 
-  if (pathname === "/signin" || pathname === "/signup" || pathname === "/become-a-vendor") {
+  if (pathname === "/signin" || pathname === "/signup") {
     return (
       <header className="border-b border-line bg-white print:hidden">
         <div className={`${wrap} justify-between`}>
