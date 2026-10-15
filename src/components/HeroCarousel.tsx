@@ -48,11 +48,11 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
     return () => clearInterval(timer);
   }, [autoplay, count, index]);
 
-  // The banner is a wide, fixed shape (4.5 to 1: for example 1920 x 427). A design of another shape is trimmed to fit,
+  // The banner is a wide, fixed shape (4 to 1: for example 1920 x 480). A design of another shape is trimmed to fit,
   // so make every banner this size.
   // Phones show a taller picture (4 to 3) when every banner has one. Otherwise they show the wide design, smaller.
   const phoneDesigns = banners.every((b) => b.mobileImage);
-  const frame = phoneDesigns ? "aspect-[4/3] md:aspect-[9/2]" : "aspect-[9/2]";
+  const frame = phoneDesigns ? "aspect-[4/3] md:aspect-[4/1]" : "aspect-[4/1]";
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowLeft") go(index - 1);
