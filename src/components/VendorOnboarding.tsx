@@ -10,6 +10,7 @@ import { ErrorText, Field, PhoneField, SelectField } from "./form";
 
 const DASHBOARD_URL = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost:3001";
 const DRAFT_KEY = "sm_vendor_draft";
+const OTHER = "__other__";
 
 type Category = { _id: string; name: string };
 
@@ -84,6 +85,9 @@ export default function VendorOnboarding() {
   const [values, setValues] = useState<Values>(empty);
   const [agree, setAgree] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  // True when "Other" is picked, or the saved category is not one in the list.
+  const [otherPicked, setOtherPicked] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"signup" | "signin">("signup");
@@ -95,7 +99,8 @@ export default function VendorOnboarding() {
   useEffect(() => {
     api<{ categories: Category[] }>("/categories")
       .then((r) => setCategories(r.categories))
-      .catch(() => setCategories([]));
+      .catch(() => setCategories([]))
+      .finally(() => setCategoriesLoaded(true));
   }, []);
 
   // Bring back what was typed before a refresh. It lives in this tab only and is cleared on submit.
@@ -132,6 +137,8 @@ export default function VendorOnboarding() {
       )
       .catch(() => undefined);
   }, [resubmitting, token]);
+
+  const typedCategory = otherPicked || (categoriesLoaded && values.category !== "" && !categories.some((c) => c.name === values.category));
 
   const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const next = { ...values, [k]: e.target.value };
@@ -415,16 +422,46 @@ export default function VendorOnboarding() {
           <div className="md:col-span-2">
             <Field label="Business name" name="businessName" value={values.businessName} onChange={set("businessName")} maxLength={80} hint="The name customers see on your products." required />
           </div>
-          <SelectField label="What do you sell?" name="category" value={values.category} onChange={set("category")} required>
-            <option value="" disabled>
-              Choose a category
-            </option>
-            {categories.map((c) => (
-              <option key={c._id} value={c.name}>
-                {c.name}
+          <div className="flex flex-col gap-3">
+            <SelectField
+              label="What do you sell?"
+              name="category"
+              value={typedCategory ? OTHER : values.category}
+              onChange={(e) => {
+                if (e.target.value === OTHER) {
+                  setOtherPicked(true);
+                  set("category")({ target: { value: "" } } as React.ChangeEvent<HTMLInputElement>);
+                } else {
+                  setOtherPicked(false);
+                  set("category")(e);
+                }
+              }}
+              required
+            >
+              <option value="" disabled>
+                Choose a category
               </option>
-            ))}
-          </SelectField>
+              {categories.map((c) => (
+                <option key={c._id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+              <option value={OTHER}>Other: my category is not listed</option>
+            </SelectField>
+            {typedCategory && (
+              <Field
+                label="Your category"
+                name="newCategory"
+                value={values.category}
+                onChange={set("category")}
+                minLength={2}
+                maxLength={40}
+                placeholder="e.g. Baby care"
+                hint="It is added to the list for everyone on Square Market."
+                required
+              />
+            )}
+          </div>
           <PhoneField label="Business phone" name="phone" value={values.phone} onChange={set("phone")} required />
           <SelectField label="State" name="state" value={values.state} onChange={set("state")} required>
             <option value="" disabled>
@@ -459,7 +496,19 @@ export default function VendorOnboarding() {
               </option>
             ))}
           </SelectField>
-          <Field label="ID number" name="idNumber" value={values.idNumber} onChange={set("idNumber")} autoComplete="off" required />
+          <Field
+            label="ID number"
+            name="idNumber"
+            value={values.idNumber}
+            onChange={(e) => set("idNumber")(values.idType === "nin" ? ({ target: { value: e.target.value.replace(/\D/g, "") } } as React.ChangeEvent<HTMLInputElement>) : e)}
+            autoComplete="off"
+            inputMode={values.idType === "nin" ? "numeric" : "text"}
+            maxLength={values.idType === "nin" ? 11 : 20}
+            pattern={values.idType === "nin" ? "\\d{11}" : "[A-Za-z0-9 \\-]{6,20}"}
+            title={values.idType === "nin" ? "A NIN is exactly 11 digits" : "6 to 20 letters and numbers"}
+            hint={values.idType === "nin" ? "Your NIN is exactly 11 digits." : "Copy it exactly as printed on the ID."}
+            required
+          />
         </div>
         <p className="mt-5 text-[13px] text-muted">
           We use this only to confirm who you are before approving your account. It is not shown to customers.
