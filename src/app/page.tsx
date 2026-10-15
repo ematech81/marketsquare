@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import CategoryBrowser from "@/components/CategoryBrowser";
 import HeroCarousel from "@/components/HeroCarousel";
 import ProductCard from "@/components/ProductCard";
 import { getBanners } from "@/lib/banners";
@@ -127,25 +128,7 @@ async function Catalog() {
 
   return (
     <>
-      {categories.length > 0 && (
-        <section className="mx-auto max-w-[1280px] px-6 pt-14 pb-4">
-          <h2 className="mb-6 text-[28px] font-semibold tracking-tight">Shop by category</h2>
-          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))]">
-            {categories.map((c) => (
-              <Link
-                key={c._id}
-                href={`/products?category=${c.slug}`}
-                className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-white px-4 py-5 text-[15px] font-semibold hover:border-foreground"
-              >
-                {c.name}
-                <span className="text-accent-ink" aria-hidden>
-                  →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {categories.length > 0 && <CategoryBrowser categories={categories} />}
 
       <section className="mx-auto max-w-[1280px] px-6 py-10">
         <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">

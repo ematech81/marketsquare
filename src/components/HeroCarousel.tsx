@@ -61,11 +61,12 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   // Sits inside the page width, like the rest of the page, with space above it and a border around it.
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 pt-5 pb-1 md:px-6 md:pt-6">
+    <div className="w-full border-b border-line bg-[#E9ECF0]">
+    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-6 md:py-6">
     <section
       aria-roledescription="carousel"
       aria-label="Featured offers"
-      className="group relative w-full overflow-hidden rounded-[10px] border border-line bg-surface shadow-sm"
+      className="group relative w-full overflow-hidden rounded-[10px] border border-line bg-surface shadow-md"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onKeyDown={onKeyDown}
@@ -176,6 +177,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
         </>
       )}
     </section>
+    </div>
     </div>
   );
 }
