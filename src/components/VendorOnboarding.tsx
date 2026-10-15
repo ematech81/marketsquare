@@ -84,6 +84,8 @@ export default function VendorOnboarding() {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<Values>(empty);
   const [agree, setAgree] = useState(false);
+  // Shown right under the tick box.
+  const [agreeError, setAgreeError] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   // True when "Other" is picked, or the saved category is not one in the list.
@@ -519,7 +521,7 @@ export default function VendorOnboarding() {
     content = stepForm(
       () => {
         if (!agree) {
-          setError("Tick the box to confirm your details are correct.");
+          setAgreeError("Tick the box to confirm your details are correct.");
           return;
         }
         submit();
@@ -562,7 +564,13 @@ export default function VendorOnboarding() {
         </div>
 
         <label className="mt-5 flex items-start gap-3 text-sm">
-          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-[18px] accent-accent" />
+          <input type="checkbox" checked={agree} onChange={(e) => {
+              setAgree(e.target.checked);
+              if (e.target.checked) setAgreeError("");
+            }}
+            aria-describedby={agreeError ? "agree-error" : undefined}
+            className="mt-0.5 size-[18px] accent-accent"
+          />
           <span>
             I confirm these details are correct and I agree to the{" "}
             <Link href="/terms" target="_blank" className="font-semibold text-accent-ink underline">
@@ -571,6 +579,11 @@ export default function VendorOnboarding() {
             .
           </span>
         </label>
+        {agreeError && (
+          <p id="agree-error" role="alert" className="mt-2 text-sm text-[#B42318]">
+            {agreeError}
+          </p>
+        )}
       </>,
       true,
     );
