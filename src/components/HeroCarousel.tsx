@@ -48,20 +48,24 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
     return () => clearInterval(timer);
   }, [autoplay, count, index]);
 
-  // Phones show a taller design when every banner has one. Otherwise they show the wide design, smaller.
+  // The banner is a wide, fixed shape (4.5 to 1: for example 1920 x 427). A design of another shape is trimmed to fit,
+  // so make every banner this size.
+  // Phones show a taller picture (4 to 3) when every banner has one. Otherwise they show the wide design, smaller.
   const phoneDesigns = banners.every((b) => b.mobileImage);
-  const frame = phoneDesigns ? "aspect-[4/3] md:aspect-[1600/470]" : "aspect-[1600/470]";
+  const frame = phoneDesigns ? "aspect-[4/3] md:aspect-[9/2]" : "aspect-[9/2]";
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowLeft") go(index - 1);
     else if (e.key === "ArrowRight") go(index + 1);
   }
 
+  // Sits inside the page width, like the rest of the page, with space above it and a border around it.
   return (
+    <div className="mx-auto w-full max-w-[1280px] px-4 pt-5 pb-1 md:px-6 md:pt-6">
     <section
       aria-roledescription="carousel"
       aria-label="Featured offers"
-      className="group relative w-full overflow-hidden bg-surface"
+      className="group relative w-full overflow-hidden rounded-sm border border-line bg-surface shadow-sm"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onKeyDown={onKeyDown}
@@ -96,7 +100,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
       >
         {banners.map((b, i) => {
           const picture = (
-            <div className={`relative w-full ${frame}`}>
+            <div className={`relative w-full md:max-h-[28rem] ${frame}`}>
               {b.mobileImage ? (
                 <>
                   <Image src={b.mobileImage} alt={b.alt} fill priority={i === 0} sizes="100vw" className="object-cover md:hidden" draggable={false} />
@@ -172,6 +176,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
         </>
       )}
     </section>
+    </div>
   );
 }
 
