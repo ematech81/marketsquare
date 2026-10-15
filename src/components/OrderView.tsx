@@ -18,7 +18,8 @@ type Shipment = {
 
 type Order = {
   orderNumber: string;
-  paymentStatus: "pending" | "paid" | "failed" | "mismatch";
+  paymentStatus: "pending" | "paid" | "failed" | "mismatch" | "cod";
+  paymentMethod?: "online" | "cod";
   createdAt: string;
   address: { fullName: string; phone: string; street: string; city: string; state: string; landmark?: string };
   subtotal: number;
@@ -51,7 +52,7 @@ function orderPill(o: Order): { text: string; cls: string } {
     return { text: all ? "Shipped" : "Partly shipped", cls: "bg-[#FBEAE4] text-[#8A3219]" };
   }
   if (s.some((x) => x === "packed")) return { text: "Packed", cls: "bg-[#FBEAE4] text-[#8A3219]" };
-  return { text: "Paid", cls: "bg-[#FBEAE4] text-[#8A3219]" };
+  return { text: o.paymentStatus === "cod" ? "Pay on delivery" : "Paid", cls: "bg-[#FBEAE4] text-[#8A3219]" };
 }
 
 function stepsFor(s: Shipment, state: string) {
@@ -166,6 +167,11 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
           )}
         </p>
       )}
+      {order.paymentStatus === "cod" && (
+        <p className={`${panel} mb-6 p-4 text-sm`}>
+          <strong>Pay on delivery.</strong> Nothing to pay now. Please have <strong>{formatNaira(order.total)}</strong> ready when your order arrives.
+        </p>
+      )}
       {order.paymentStatus === "failed" && (
         <p className="mb-6 rounded-sm border border-[#B42318] bg-[#FEF3F2] p-4 text-sm text-[#B42318]">
           The payment was not completed, so you have not been charged for this order.{" "}
@@ -272,10 +278,12 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
               <span>{formatNaira(order.deliveryTotal)}</span>
             </p>
             <p className="flex justify-between border-t border-line pt-3 text-[17px] font-bold">
-              <span>{order.paymentStatus === "paid" ? "Total paid" : "Total"}</span>
+              <span>{order.paymentStatus === "paid" ? "Total paid" : order.paymentStatus === "cod" ? "To pay on delivery" : "Total"}</span>
               <span className="font-display">{formatNaira(order.total)}</span>
             </p>
-            {order.paymentStatus === "paid" && <span className="text-[13px] font-semibold text-[#166534]">Paid with KoraPay</span>}
+            {order.paymentStatus === "paid" && (
+              <span className="text-[13px] font-semibold text-[#166534]">{order.paymentMethod === "cod" ? "Paid on delivery" : "Paid with KoraPay"}</span>
+            )}
           </section>
         </aside>
       </div>

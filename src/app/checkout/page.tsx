@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, ErrorText, Field, PhoneField, SelectField } from "@/components/form";
 import { api } from "@/lib/api";
@@ -31,12 +32,14 @@ function groupBySeller(lines: CartLine[]): Group[] {
 
 export default function CheckoutPage() {
   const { user, token, loading } = useAuth();
-  const { cart, setQuantity, remove } = useCart();
+  const { cart, setQuantity, remove, refresh } = useCart();
+  const router = useRouter();
   const [zones, setZones] = useState<Zone[] | null>(null);
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
   const [state, setState] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [method, setMethod] = useState<"online" | "cod">("online");
 
   useEffect(() => {
     api<StoreSettings>("/settings")
@@ -83,6 +86,11 @@ export default function CheckoutPage() {
   const delivery = zone ? zone.fee * groups.length : null;
   const total = delivery !== null ? cart.subtotal + delivery : null;
   const shortBy = Math.max(0, settings.minOrderAmount - cart.subtotal);
+  // Pay on delivery is offered when the admin has it on, for orders up to the limit they set.
+  const codOn = settings.codEnabled === true;
+  const codMax = settings.codMaxAmount ?? 0;
+  const codOverLimit = total !== null && total > codMax;
+  const payMethod = method === "cod" && codOn && !codOverLimit ? "cod" : "online";
   const blocked = cart.items.some((i) => i.issue) || shortBy > 0;
 
   const run = async (fn: () => Promise<void>) => {
@@ -101,11 +109,12 @@ export default function CheckoutPage() {
     setBusy(true);
     setError("");
     try {
-      const res = await api<{ checkoutUrl: string }>("/orders/checkout", {
+      const res = await api<{ orderNumber: string; checkoutUrl?: string }>("/orders/checkout", {
         method: "POST",
         token,
         body: {
           email: get("email") || undefined,
+          paymentMethod: payMethod,
           address: {
             fullName: get("fullName"),
             phone: toApiPhone(get("phone")),
@@ -116,8 +125,14 @@ export default function CheckoutPage() {
           },
         },
       });
+      if (payMethod === "cod") {
+        // Nothing to pay now. The order is placed, so show it.
+        await refresh();
+        router.push(`/orders/${res.orderNumber}`);
+        return;
+      }
       // Hand over to KoraPay's secure payment page.
-      window.location.href = res.checkoutUrl;
+      window.location.href = res.checkoutUrl!;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setBusy(false);
@@ -240,10 +255,46 @@ export default function CheckoutPage() {
 
         <section className={panel}>
           <h2 className={panelTitle}>3. Payment</h2>
-          <div className="flex flex-col gap-2 p-5 text-sm text-[#45474B]">
-            <p>You will pay on KoraPay&apos;s secure page, where you choose how to pay (card or bank transfer).</p>
-            <p>We deliver your order to you ourselves.</p>
-          </div>
+          <fieldset className="flex flex-col gap-3 p-5">
+            <legend className="sr-only">How do you want to pay?</legend>
+            {(
+              [
+                { id: "online", title: "Pay now", body: "Pay on KoraPay's secure page with your card or by bank transfer.", disabled: false },
+                ...(codOn
+                  ? [
+                      {
+                        id: "cod",
+                        title: "Pay on delivery",
+                        body: codOverLimit
+                          ? `Pay on delivery is for orders up to ${formatNaira(codMax)}. Please pay now for this order.`
+                          : `Pay ${total !== null ? formatNaira(total) : "the total"} when your order arrives. Please have the amount ready.${total === null ? ` Available for orders up to ${formatNaira(codMax)}.` : ""}`,
+                        disabled: codOverLimit,
+                      },
+                    ]
+                  : []),
+              ] as { id: "online" | "cod"; title: string; body: string; disabled: boolean }[]
+            ).map((o) => (
+              <label
+                key={o.id}
+                className={`flex items-start gap-3 rounded-sm border p-4 ${o.disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${payMethod === o.id ? "border-foreground bg-[#F8F9FA]" : "border-[#C6C6CB]"}`}
+              >
+                <input
+                  type="radio"
+                  name="payMethod"
+                  value={o.id}
+                  checked={payMethod === o.id}
+                  disabled={o.disabled}
+                  onChange={() => setMethod(o.id)}
+                  className="mt-1 size-[18px] accent-accent"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[15px] font-semibold">{o.title}</span>
+                  <span className="text-sm text-[#45474B]">{o.body}</span>
+                </span>
+              </label>
+            ))}
+            <p className="text-sm text-[#45474B]">We deliver your order to you ourselves.</p>
+          </fieldset>
         </section>
       </div>
 
@@ -264,7 +315,7 @@ export default function CheckoutPage() {
           <span className="font-display text-[30px] font-bold">{total !== null ? formatNaira(total) : "-"}</span>
         </p>
         <Button type="submit" form="checkout-form" busy={busy} disabled={blocked} className="h-14 text-[17px]">
-          {total !== null ? `Pay ${formatNaira(total)}` : "Continue to payment"}
+          {payMethod === "cod" ? (total !== null ? `Place order · pay ${formatNaira(total)} on delivery` : "Place order") : total !== null ? `Pay ${formatNaira(total)}` : "Continue to payment"}
         </Button>
         {blocked && (
           <p className="text-center text-[13px] text-[#B42318]">
@@ -272,7 +323,7 @@ export default function CheckoutPage() {
           </p>
         )}
         <p className="text-center text-[13px] leading-normal text-muted">
-          By paying you agree to the{" "}
+          By {payMethod === "cod" ? "placing this order" : "paying"} you agree to the{" "}
           <Link href="/terms" className="text-accent-ink underline">
             terms
           </Link>{" "}

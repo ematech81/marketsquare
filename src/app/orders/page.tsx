@@ -8,7 +8,7 @@ import { formatNaira } from "@/lib/format";
 
 type Row = { orderNumber: string; total: number; paymentStatus: string; createdAt: string; items: { title: string }[] };
 
-const STATUS: Record<string, string> = { paid: "Paid", pending: "Awaiting payment", mismatch: "Needs attention" };
+const STATUS: Record<string, string> = { paid: "Paid", pending: "Awaiting payment", mismatch: "Needs attention", cod: "Pay on delivery" };
 
 export default function OrdersPage() {
   const { token, user, loading } = useAuth();
