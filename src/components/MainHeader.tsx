@@ -248,6 +248,7 @@ function AccountMenu() {
 
   const first = user?.name.split(" ")[0];
   const link = "flex min-h-11 items-center px-4 text-sm hover:bg-surface";
+  const primary = "flex min-h-11 items-center px-4 text-sm font-semibold bg-accent text-foreground hover:brightness-95";
 
   return (
     <div ref={ref} className="relative">
@@ -273,7 +274,7 @@ function AccountMenu() {
                 My orders
               </Link>
               {user.role === "vendor" && (
-                <a role="menuitem" href={DASHBOARD_URL} className={link}>
+                <a role="menuitem" href={DASHBOARD_URL} className={primary}>
                   Vendor dashboard
                 </a>
               )}
@@ -283,7 +284,7 @@ function AccountMenu() {
                 </a>
               )}
               {user.role === "customer" && (
-                <Link role="menuitem" href="/become-a-vendor" onClick={close} className={link}>
+                <Link role="menuitem" href="/become-a-vendor" onClick={close} className={primary}>
                   Sell on Square Market
                 </Link>
               )}
@@ -297,7 +298,7 @@ function AccountMenu() {
                   close();
                   signOut();
                 }}
-                className={`${link} w-full cursor-pointer border-t border-line text-left font-semibold`}
+                className={`${link} w-full cursor-pointer bg-[#B42318] text-left font-semibold text-white hover:bg-[#912018] hover:text-white`}
               >
                 Sign out
               </button>
@@ -351,6 +352,7 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
 
   if (!open) return null;
   const row = "flex min-h-12 items-center justify-between px-5 text-[15px] text-foreground hover:bg-surface";
+  const primaryRow = "flex min-h-12 items-center justify-between bg-accent px-5 text-[15px] font-semibold text-foreground hover:brightness-95";
 
   return (
     <div className="fixed inset-0 z-[60]">
@@ -380,7 +382,7 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
               My orders
             </Link>
             {user.role !== "customer" && (
-              <a href={DASHBOARD_URL} className={row}>
+              <a href={DASHBOARD_URL} className={user.role === "vendor" ? primaryRow : row}>
                 {user.role === "admin" ? "Admin dashboard" : "Vendor dashboard"}
               </a>
             )}
@@ -391,7 +393,7 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
           </Link>
         )}
         {user?.role !== "vendor" && user?.role !== "admin" && (
-          <Link href="/become-a-vendor" onClick={onClose} className={row}>
+          <Link href="/become-a-vendor" onClick={onClose} className={primaryRow}>
             Sell on Square Market
           </Link>
         )}
@@ -405,7 +407,7 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
               onClose();
               signOut();
             }}
-            className={`${row} w-full cursor-pointer text-left font-semibold`}
+            className="flex min-h-12 w-full cursor-pointer items-center bg-[#B42318] px-5 text-left text-[15px] font-semibold text-white hover:bg-[#912018]"
           >
             Sign out
           </button>
@@ -416,6 +418,10 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
 }
 
 // ---------- the header ----------
+
+// The orange button at the far end of the category row.
+const sellButton =
+  "ml-auto my-1 hidden min-h-8 shrink-0 items-center rounded-sm bg-accent px-3.5 text-sm font-semibold whitespace-nowrap text-foreground hover:brightness-95 md:flex";
 
 export default function MainHeader() {
   const { cart } = useCart();
@@ -431,6 +437,7 @@ export default function MainHeader() {
       .catch(() => setCategories([]));
   }, []);
 
+  const { user } = useAuth();
   const activeCats = pathname === "/products" ? (params.get("category")?.split(",") ?? []) : [];
 
   return (
@@ -503,6 +510,15 @@ export default function MainHeader() {
               </Link>
             );
           })}
+          {user?.role === "vendor" ? (
+            <a href={DASHBOARD_URL} className={sellButton}>
+              Vendor dashboard
+            </a>
+          ) : user?.role === "admin" ? null : (
+            <Link href="/become-a-vendor" className={sellButton}>
+              {user ? "Sell on Square Market" : "Become a vendor"}
+            </Link>
+          )}
         </div>
       </nav>
 
