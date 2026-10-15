@@ -76,6 +76,8 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
   const { refresh } = useCart();
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState("");
+  // True once we have checked for a while and the payment is still not confirmed.
+  const [stalled, setStalled] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -90,7 +92,10 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
         if (cancelled) return;
         setOrder(res.order);
         if (res.order.paymentStatus === "paid") refresh();
-        else if (res.order.paymentStatus === "pending" && attempt < 8) timer = setTimeout(() => check(attempt + 1), 4000);
+        else if (res.order.paymentStatus === "pending") {
+          if (attempt < 8) timer = setTimeout(() => check(attempt + 1), 4000);
+          else setStalled(true);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Could not load this order");
       }
@@ -148,7 +153,17 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
 
       {order.paymentStatus === "pending" && (
         <p className={`${panel} mb-6 p-4 text-sm`}>
-          We are confirming your payment. This page updates by itself. If you have already paid, it can take a minute.
+          {stalled ? (
+            <>
+              We have not received a payment for this order. If you cancelled, you have not been charged.{" "}
+              <Link href="/checkout" className="font-semibold text-accent-ink underline">
+                Back to your cart
+              </Link>{" "}
+              to try again. If you did pay, wait a minute and refresh this page, or contact support with your order number.
+            </>
+          ) : (
+            "We are confirming your payment. This page updates by itself. If you have already paid, it can take a minute."
+          )}
         </p>
       )}
       {order.paymentStatus === "failed" && (
