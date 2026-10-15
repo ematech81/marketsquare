@@ -52,7 +52,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
   // so make every banner this size.
   // Phones show a taller picture (4 to 3) when every banner has one. Otherwise they show the wide design, smaller.
   const phoneDesigns = banners.every((b) => b.mobileImage);
-  const frame = phoneDesigns ? "aspect-[4/3] md:aspect-[4/1]" : "aspect-[4/1]";
+  const frame = phoneDesigns ? "aspect-[4/3] md:aspect-[4/1]" : "aspect-[3/1] md:aspect-[4/1]";
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowLeft") go(index - 1);
