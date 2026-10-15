@@ -65,7 +65,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
     <section
       aria-roledescription="carousel"
       aria-label="Featured offers"
-      className="group relative w-full overflow-hidden rounded-sm border border-line bg-surface shadow-sm"
+      className="group relative w-full overflow-hidden rounded-sm border-2 border-[#C6C6CB] bg-surface shadow-sm"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onKeyDown={onKeyDown}
