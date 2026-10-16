@@ -14,6 +14,21 @@ export type FilterValues = {
   sort: string;
 };
 
+// Reads the filters back out of the address bar. The menu on phones uses this, because it is not part of the page.
+export function valuesFromParams(get: (key: string) => string | null): FilterValues {
+  const list = (v: string | null) => (v ?? "").split(",").filter(Boolean);
+  return {
+    q: get("q") ?? "",
+    categories: list(get("category")),
+    vendors: list(get("vendor")),
+    minPrice: get("minPrice") ?? "",
+    maxPrice: get("maxPrice") ?? "",
+    fourStars: get("minRating") === "4",
+    inStock: get("inStock") === "1",
+    sort: get("sort") || "newest",
+  };
+}
+
 export function buildQuery(v: Partial<FilterValues> & { page?: number }) {
   const p = new URLSearchParams();
   if (v.q) p.set("q", v.q);
@@ -39,17 +54,30 @@ export function Filters({
   categories,
   vendors = [],
   values,
+  variant = "panel",
+  className = "",
+  hideCategories = false,
+  onApply,
 }: {
   categories: { name: string; slug: string }[];
   // "house" is the store's own products. Only shown when vendors are selling.
   vendors?: { id: string; name: string }[];
   values: FilterValues;
+  // "drawer" is the version inside the phone menu: no box around it.
+  variant?: "panel" | "drawer";
+  className?: string;
+  // The phone menu already lists the categories, so it leaves them out here.
+  hideCategories?: boolean;
+  // The "Show results" button in the phone menu.
+  onApply?: () => void;
 }) {
   const router = useRouter();
   const go = (patch: Partial<FilterValues>) => router.push(buildQuery({ ...values, ...patch }));
 
   return (
-    <aside className="flex flex-col gap-6 rounded-sm border border-line bg-white p-5 lg:w-65 lg:shrink-0">
+    <aside
+      className={`flex flex-col gap-6 ${variant === "drawer" ? "px-5 py-5" : "rounded-sm border border-line bg-white p-5 lg:w-65 lg:shrink-0"} ${className}`}
+    >
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Filters</h2>
         <Link href={values.q ? `/products?q=${encodeURIComponent(values.q)}` : "/products"} className="text-[13px] font-semibold text-accent-ink hover:text-foreground">
@@ -57,8 +85,8 @@ export function Filters({
         </Link>
       </div>
 
-      {categories.length > 0 && (
-        <fieldset className="flex flex-col gap-1 border-0 p-0">
+      {categories.length > 0 && !hideCategories && (
+        <fieldset className="flex max-h-56 flex-col gap-1 overflow-y-auto overscroll-contain border-0 p-0">
           <legend className={legend}>Category</legend>
           {categories.map((c) => (
             <label key={c.slug} className={check}>
@@ -154,6 +182,12 @@ export function Filters({
         <input type="checkbox" className={box} checked={values.inStock} onChange={(e) => go({ inStock: e.target.checked })} />
         In stock only
       </label>
+
+      {onApply && (
+        <button type="button" onClick={onApply} className="h-12 cursor-pointer rounded-sm bg-accent text-[15px] font-semibold text-foreground hover:brightness-95">
+          Show results
+        </button>
+      )}
     </aside>
   );
 }
@@ -185,5 +219,21 @@ export function SortSelect({ values }: { values: FilterValues }) {
         ))}
       </select>
     </div>
+  );
+}
+
+// Phones only: opens the side menu, where the categories and the filters are.
+export function OpenMenuButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event("sm-open-menu"))}
+      className="flex h-11 cursor-pointer items-center gap-2 rounded-sm border border-[#C6C6CB] bg-white px-4 text-sm font-semibold hover:border-foreground md:hidden"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+        <path d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+      Select category
+    </button>
   );
 }

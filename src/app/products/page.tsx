@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { buildQuery, Filters, SortSelect, type FilterValues } from "@/components/Filters";
+import { buildQuery, Filters, OpenMenuButton, SortSelect, type FilterValues } from "@/components/Filters";
 import ProductCard from "@/components/ProductCard";
 import { getCategories, getProducts } from "@/lib/catalog";
 import { getStores } from "@/lib/stores";
@@ -90,11 +90,14 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
             {list ? `Showing ${list.total} ${list.total === 1 ? "product" : "products"}` : ""}
           </p>
         </div>
-        <SortSelect values={values} />
+        <div className="flex flex-col items-end gap-2">
+          <SortSelect values={values} />
+          <OpenMenuButton />
+        </div>
       </div>
 
       <div className="flex flex-col items-start gap-8 lg:flex-row">
-        <Filters categories={categories} vendors={stores.map((s) => ({ id: s.id, name: s.name }))} values={values} />
+        <Filters categories={categories} vendors={stores.map((s) => ({ id: s.id, name: s.name }))} values={values} className="max-md:hidden" />
 
         <section className="w-full min-w-0 flex-1">
           {chips.length > 0 && (

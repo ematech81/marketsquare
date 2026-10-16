@@ -6,7 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
+import { Filters, valuesFromParams } from "./Filters";
 import NotificationBell from "./NotificationBell";
+import WholesaleBar from "./WholesaleBar";
 
 type Category = { _id: string; name: string; slug: string };
 type Zone = { state: string; fee: number; estimatedDays: number };
@@ -338,6 +340,18 @@ function AccountMenu() {
 function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => void; categories: Category[] }) {
   const { user, signOut } = useAuth();
   const closeRef = useRef<HTMLButtonElement>(null);
+  // On the products page, phones get the filters in this menu instead of above the products.
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const onProducts = pathname === "/products";
+  const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    if (!open || !onProducts) return;
+    api<{ stores: { id: string; name: string }[] }>("/stores")
+      .then((r) => setVendors(r.stores.map((s) => ({ id: s.id, name: s.name }))))
+      .catch(() => setVendors([]));
+  }, [open, onProducts]);
 
   useEffect(() => {
     if (!open) return;
@@ -358,7 +372,7 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
   return (
     <div className="fixed inset-0 z-[60]">
       <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60" tabIndex={-1} />
-      <div role="dialog" aria-modal="true" aria-label="All categories" className="absolute inset-y-0 left-0 flex w-[min(22rem,88vw)] flex-col overflow-y-auto bg-white">
+      <div role="dialog" aria-modal="true" aria-label="All categories" className="absolute inset-y-0 left-0 flex w-[min(22rem,88vw)] flex-col overflow-y-auto bg-white text-foreground">
         <div className="flex items-center justify-between bg-[#1B1F27] px-5 py-4 text-white">
           <span className="font-display text-lg font-bold">{user ? `Hello, ${user.name.split(" ")[0]}` : "Hello, sign in"}</span>
           <button ref={closeRef} type="button" onClick={onClose} aria-label="Close menu" className="flex size-10 cursor-pointer items-center justify-center rounded-sm text-2xl hover:bg-white/10">
@@ -367,14 +381,23 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
         </div>
 
         <p className="px-5 pt-5 pb-2 font-display text-lg font-semibold">Shop by category</p>
-        <Link href="/products" onClick={onClose} className={row}>
-          All products <span aria-hidden>›</span>
-        </Link>
-        {categories.map((c) => (
-          <Link key={c._id} href={`/products?category=${c.slug}`} onClick={onClose} className={row}>
-            {c.name} <span aria-hidden>›</span>
+        {/* Scrolls on its own, so a long list of categories does not push everything else off the screen */}
+        <div className="max-h-[38vh] overflow-y-auto overscroll-contain">
+          <Link href="/products" onClick={onClose} className={row}>
+            All products <span aria-hidden>›</span>
           </Link>
-        ))}
+          {categories.map((c) => (
+            <Link key={c._id} href={`/products?category=${c.slug}`} onClick={onClose} className={row}>
+              {c.name} <span aria-hidden>›</span>
+            </Link>
+          ))}
+        </div>
+
+        {onProducts && (
+          <div className="mt-2 border-t border-line md:hidden">
+            <Filters categories={categories} vendors={vendors} values={valuesFromParams((k) => params.get(k))} variant="drawer" hideCategories onApply={onClose} />
+          </div>
+        )}
 
         <p className="mt-2 border-t border-line px-5 pt-5 pb-2 font-display text-lg font-semibold">Help and account</p>
         {user ? (
@@ -431,6 +454,13 @@ export default function MainHeader() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [drawer, setDrawer] = useState(false);
   const closeDrawer = useCallback(() => setDrawer(false), []);
+
+  // The "Select category" button on the products page asks for the menu to open.
+  useEffect(() => {
+    const open = () => setDrawer(true);
+    window.addEventListener("sm-open-menu", open);
+    return () => window.removeEventListener("sm-open-menu", open);
+  }, []);
 
   useEffect(() => {
     api<{ categories: Category[] }>("/categories")
@@ -527,6 +557,8 @@ export default function MainHeader() {
           )}
         </div>
       </nav>
+
+      <WholesaleBar />
 
       <Drawer open={drawer} onClose={closeDrawer} categories={categories} />
     </header>
