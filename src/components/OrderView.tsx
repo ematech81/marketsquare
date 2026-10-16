@@ -21,6 +21,7 @@ type Order = {
   orderNumber: string;
   paymentStatus: "pending" | "paid" | "failed" | "mismatch" | "cod";
   paymentMethod?: "online" | "cod";
+  paidAt?: string;
   createdAt: string;
   address: { fullName: string; phone: string; street: string; city: string; state: string; landmark?: string };
   subtotal: number;
@@ -54,6 +55,38 @@ function orderPill(o: Order): { text: string; cls: string } {
   }
   if (s.some((x) => x === "packed")) return { text: "Packed", cls: "bg-[#FBEAE4] text-[#8A3219]" };
   return { text: o.paymentStatus === "cod" ? "Pay on delivery" : "Paid", cls: "bg-[#FBEAE4] text-[#8A3219]" };
+}
+
+// Where the money stands, as ticks, ahead of the delivery steps.
+function paymentSteps(o: Order): { label: string; done: boolean; note: string }[] {
+  const day = (iso: string) => new Date(iso).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+  const placed = { label: "Order placed", done: true, note: day(o.createdAt) };
+  if (o.paymentMethod === "cod") {
+    return [
+      placed,
+      { label: "Pay on delivery", done: true, note: `You pay ${formatNaira(o.total)} when it arrives` },
+      {
+        label: "Payment received",
+        done: o.paymentStatus === "paid",
+        note: o.paymentStatus === "paid" && o.paidAt ? day(o.paidAt) : "When your order is delivered",
+      },
+    ];
+  }
+  return [
+    placed,
+    {
+      label: "Payment confirmed",
+      done: o.paymentStatus === "paid",
+      note:
+        o.paymentStatus === "paid" && o.paidAt
+          ? `${day(o.paidAt)} · KoraPay`
+          : o.paymentStatus === "pending"
+            ? "Waiting for your payment"
+            : o.paymentStatus === "failed"
+              ? "Payment not completed"
+              : "Needs checking",
+    },
+  ];
 }
 
 function stepsFor(s: Shipment, state: string) {
@@ -166,6 +199,22 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
           {order.shipments.length > 0 &&
             ` · ${order.shipments.length} ${order.shipments.length === 1 ? "shipment" : "shipments"} from ${vendors} ${vendors === 1 ? "vendor" : "vendors"}`}
         </span>
+        <ol className="m-0 mt-3 flex list-none flex-wrap gap-x-8 gap-y-3 border-t border-line pt-4">
+          {paymentSteps(order).map((st) => (
+            <li key={st.label} className="flex items-start gap-3">
+              <span
+                aria-hidden
+                className={`mt-0.5 flex size-6 shrink-0 items-center justify-center border-2 text-[13px] font-bold ${st.done ? "border-foreground bg-foreground text-white" : "border-[#C6C6CB] bg-white"}`}
+              >
+                {st.done ? "✓" : ""}
+              </span>
+              <span className="flex flex-col">
+                <span className={`text-[15px] ${st.done ? "font-semibold" : "font-medium text-muted"}`}>{st.label}</span>
+                <span className="text-[13px] text-muted">{st.note}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {order.paymentStatus === "pending" && (

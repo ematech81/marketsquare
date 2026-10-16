@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatNaira } from "@/lib/format";
 import type { Product } from "@/lib/catalog";
 import QuickAdd from "./QuickAdd";
+import Stars from "./Stars";
 
 // The product card. The photo sits on a soft "stage" so it stands out whatever the photo's own background is:
 // a light studio gradient, a tilted orange square (echoing the logo) and a ground shadow. White photo
@@ -40,7 +41,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {!product.inStock && <span aria-hidden className="absolute inset-0 bg-white/55" />}
 
-        <span className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
+        <span className="absolute top-2 left-2 flex flex-col items-start gap-1.5 md:top-3 md:left-3">
           {discount > 0 && (
             <span className="bg-accent px-2 py-1 text-xs leading-none font-bold text-foreground">-{discount}%</span>
           )}
@@ -53,28 +54,34 @@ export default function ProductCard({ product }: { product: Product }) {
         </span>
 
         {product.ratingCount > 0 && (
-          <span className="absolute top-3 right-3 rounded-sm border border-line bg-white/90 px-2 py-1 text-xs leading-none font-bold text-accent-ink backdrop-blur-sm">
+          <span className="absolute top-3 right-3 hidden rounded-sm border border-line bg-white/90 px-2 py-1 text-xs leading-none font-bold text-accent-ink backdrop-blur-sm md:block">
             ★ {product.ratingAverage.toFixed(1)}
           </span>
         )}
       </Link>
 
-      <div className="flex grow flex-col gap-1 p-4 pb-3">
-        <span className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">{product.category.name}</span>
-        <Link href={href} className="line-clamp-2 min-h-[2.7em] text-base leading-snug font-semibold hover:text-accent-ink">
+      <div className="flex grow flex-col gap-1 p-2.5 pb-2 md:p-4 md:pb-3">
+        <span className="hidden text-[11px] font-semibold tracking-[0.08em] text-muted uppercase md:block">{product.category.name}</span>
+        <Link href={href} className="line-clamp-2 min-h-[2.6em] text-sm leading-snug font-medium hover:text-accent-ink md:min-h-[2.7em] md:text-base md:font-semibold">
           {product.title}
         </Link>
-        <span className="text-[13px] text-muted">Sold by {product.seller.name}</span>
+        <span className="hidden text-[13px] text-muted md:block">Sold by {product.seller.name}</span>
 
-        <p className="mt-auto flex flex-wrap items-baseline gap-x-2 pt-3">
-          <span className="font-display text-[22px] leading-none font-bold">{formatNaira(product.price)}</span>
+        <p className="mt-auto flex flex-wrap items-baseline gap-x-2 pt-2 md:pt-3">
+          <span className="font-display text-[17px] leading-none font-bold md:text-[22px]">{formatNaira(product.price)}</span>
           {discount > 0 && product.compareAtPrice && (
             <span className="text-[13px] text-muted line-through">{formatNaira(product.compareAtPrice)}</span>
           )}
         </p>
       </div>
 
-      <div className="px-4 pb-4">
+      {product.ratingCount > 0 && (
+        <p className="flex items-center gap-1.5 px-2.5 pb-1 text-xs text-muted md:hidden">
+          <Stars value={product.ratingAverage} size={13} />({product.ratingCount})
+        </p>
+      )}
+
+      <div className="px-2.5 pb-2.5 md:px-4 md:pb-4">
         <QuickAdd
           productId={product.id}
           href={href}

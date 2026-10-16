@@ -142,7 +142,7 @@ async function Catalog() {
         ) : latest.products.length === 0 ? (
           <p className="text-muted">Products are coming soon.</p>
         ) : (
-          <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
+          <div className="grid grid-cols-2 gap-3 md:gap-6 md:[grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
             {latest.products.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

@@ -1,6 +1,6 @@
 import { api, ApiError } from "./api";
 
-export type Store = { id: string; name: string; category: string; state: string; city: string; productCount: number };
+export type Store = { id: string; name: string; category: string; state: string; city: string; productCount: number; since?: string };
 
 // Approved vendors with at least one live product. Nothing private is included.
 export async function getStores(): Promise<Store[]> {

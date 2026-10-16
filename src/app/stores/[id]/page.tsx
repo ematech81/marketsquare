@@ -57,7 +57,7 @@ async function Store({ params }: { params: Params }) {
       ) : list.products.length === 0 ? (
         <p className="rounded-sm border border-line bg-white p-6 text-[#45474B]">This store has no products right now.</p>
       ) : (
-        <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
+        <div className="grid grid-cols-2 gap-3 md:gap-6 md:[grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
           {list.products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}

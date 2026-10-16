@@ -61,7 +61,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   // Sits inside the page width, like the rest of the page, with space above it and a border around it.
   return (
-    <div className="w-full border-b border-line bg-[#E9ECF0]">
+    <div className="hidden w-full border-b border-line bg-[#E9ECF0] md:block">
     <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-6 md:py-6">
     <section
       aria-roledescription="carousel"

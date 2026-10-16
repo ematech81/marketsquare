@@ -33,7 +33,7 @@ const SearchIcon = () => (
 );
 
 const CartIcon = () => (
-  <svg className={icon} width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+  <svg className={`${icon} size-[28px] md:size-[34px]`} width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M3 4h2.2l2 11h10.6l2-8H6.4" />
     <circle cx="9" cy="19" r="1.4" />
     <circle cx="17" cy="19" r="1.4" />
@@ -453,12 +453,12 @@ export default function MainHeader() {
           <MenuIcon />
         </button>
 
-        <Link href="/" className={`${hit} flex min-h-11 shrink-0 items-center gap-2.5 px-2 font-display text-xl font-bold text-white`}>
-          <span className="inline-block size-3.5 bg-accent" aria-hidden />
+        <Link href="/" className={`${hit} flex min-h-11 shrink-0 items-center gap-2 px-1 font-display text-base font-bold text-white md:gap-2.5 md:px-2 md:text-xl`}>
+          <span className="inline-block size-3 bg-accent md:size-3.5" aria-hidden />
           Square Market
         </Link>
 
-        <div className="order-last w-full md:order-none md:w-auto">
+        <div className="hidden md:block">
           <LocationPicker />
         </div>
 
@@ -480,9 +480,11 @@ export default function MainHeader() {
         >
           <span className="relative">
             <CartIcon />
-            <span className="absolute top-[7px] left-[57%] -translate-x-1/2 text-[14px] leading-none font-bold text-accent">{cart.itemCount}</span>
+            <span className="absolute top-[5px] left-[57%] -translate-x-1/2 text-[11px] leading-none font-bold text-accent md:top-[7px] md:text-[14px]">
+              {cart.itemCount}
+            </span>
           </span>
-          <span className="pb-0.5 text-sm font-bold">Cart</span>
+          <span className="hidden pb-0.5 text-sm font-bold md:inline">Cart</span>
         </Link>
       </div>
 

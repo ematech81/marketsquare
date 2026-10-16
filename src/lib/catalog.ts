@@ -21,6 +21,7 @@ export type Product = {
   sku?: string;
   gtin?: string;
   tags: string[];
+  highlights?: string[];
   details: { label: string; value: string }[];
   seoTitle?: string;
   seoDescription?: string;

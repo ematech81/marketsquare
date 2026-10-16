@@ -116,7 +116,7 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
             </p>
           ) : (
             <>
-              <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
+              <div className="grid grid-cols-2 gap-3 md:gap-6 md:[grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
                 {list.products.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}
