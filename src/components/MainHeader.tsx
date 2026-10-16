@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
+import NotificationBell from "./NotificationBell";
 
 type Category = { _id: string; name: string; slug: string };
 type Zone = { state: string; fee: number; estimatedDays: number };
@@ -473,10 +474,12 @@ export default function MainHeader() {
           </Link>
         </div>
 
+        <div className="ml-auto flex items-center gap-1 md:ml-0">
+        <NotificationBell />
         <Link
           href="/checkout"
           aria-label={`Cart, ${cart.itemCount} ${cart.itemCount === 1 ? "item" : "items"}`}
-          className={`${hit} ml-auto flex min-h-11 items-end gap-1 px-2 py-1 md:ml-0`}
+          className={`${hit} flex min-h-11 items-end gap-1 px-2 py-1`}
         >
           <span className="relative">
             <CartIcon />
@@ -486,6 +489,7 @@ export default function MainHeader() {
           </span>
           <span className="hidden pb-0.5 text-sm font-bold md:inline">Cart</span>
         </Link>
+        </div>
       </div>
 
       {/* Row 2: all categories */}
