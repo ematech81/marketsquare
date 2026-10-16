@@ -128,7 +128,7 @@ export default function CheckoutPage() {
       if (payMethod === "cod") {
         // Nothing to pay now. The order is placed, so show it.
         await refresh();
-        router.push(`/orders/${res.orderNumber}`);
+        router.push(`/orders/${res.orderNumber}?placed=1`);
         return;
       }
       // Hand over to KoraPay's secure payment page.

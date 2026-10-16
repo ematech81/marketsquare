@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatNaira } from "@/lib/format";
 
-type Row = { orderNumber: string; total: number; paymentStatus: string; createdAt: string; items: { title: string }[] };
+type Row = { orderNumber: string; total: number; paymentStatus: string; paymentMethod?: string; progress?: string; createdAt: string; items: { title: string }[] };
 
 const STATUS: Record<string, string> = { paid: "Paid", pending: "Awaiting payment", mismatch: "Needs attention", cod: "Pay on delivery" };
 
@@ -50,10 +50,12 @@ export default function OrdersPage() {
                 </span>
                 <span className="text-right">
                   <span className="block font-display text-lg font-bold">{formatNaira(o.total)}</span>
-                  <span className="text-sm text-muted">
+                  <span className="block text-sm text-muted">
+                    {o.progress ? `${o.progress} · ` : ""}
                     {STATUS[o.paymentStatus] ?? o.paymentStatus} ·{" "}
                     {new Date(o.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
                   </span>
+                  <span className="mt-1 block text-sm font-semibold text-accent-ink">Track order →</span>
                 </span>
               </Link>
             </li>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -75,6 +76,7 @@ function stepsFor(s: Shipment, state: string) {
 export default function OrderView({ orderNumber }: { orderNumber: string }) {
   const { token, user, loading } = useAuth();
   const { refresh } = useCart();
+  const justPlaced = useSearchParams().get("placed") === "1";
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState("");
   // True once we have checked for a while and the payment is still not confirmed.
@@ -134,6 +136,20 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
         </Link>{" "}
         / <span className="text-foreground">Order {order.orderNumber}</span>
       </nav>
+
+      {justPlaced && order.paymentMethod === "cod" && (
+        <section role="status" className="mb-6 rounded-sm border border-[#16A34A] bg-[#F0FDF4] p-5">
+          <p className="font-display text-xl font-semibold text-[#14532D]">Thank you, your order is placed</p>
+          <p className="mt-1 text-[15px] text-[#14532D]">
+            Your order number is <strong>{order.orderNumber}</strong>. We will confirm it and deliver it to you. You do not pay anything now: please have{" "}
+            <strong>{formatNaira(order.total)}</strong> ready when it arrives. Follow each step below, and find this page again any time under{" "}
+            <Link href="/orders" className="font-semibold underline">
+              My orders
+            </Link>
+            .
+          </p>
+        </section>
+      )}
 
       <section className={`${panel} mb-6 flex flex-col gap-2 p-6`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
