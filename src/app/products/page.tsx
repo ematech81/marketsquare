@@ -90,7 +90,7 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
             {list ? `Showing ${list.total} ${list.total === 1 ? "product" : "products"}` : ""}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex items-center gap-2">
           <SortSelect values={values} />
           <OpenMenuButton />
         </div>
