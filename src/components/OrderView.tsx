@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,7 +15,7 @@ type Shipment = {
   status: "placed" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled";
   timeline: { status: string; at: string }[];
   estimatedDelivery?: string;
-  items: { title: string; quantity: number }[];
+  items: { title: string; quantity: number; image?: string; price?: number; options?: { name: string; value: string }[] }[];
 };
 
 type Order = {
@@ -306,10 +307,23 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
                 </ol>
               )}
 
-              <div className="border-t border-line bg-background px-6 py-4 text-sm text-[#45474B]">
-                {s.items.map((i) => i.title).join(", ")} ({s.items.reduce((sum, i) => sum + i.quantity, 0)}{" "}
-                {s.items.reduce((sum, i) => sum + i.quantity, 0) === 1 ? "item" : "items"})
-              </div>
+              <ul className="m-0 list-none divide-y divide-line border-t border-line bg-background p-0">
+                {s.items.map((i, k) => (
+                  <li key={k} className="flex items-center gap-4 px-6 py-4">
+                    <span className="relative size-16 shrink-0 overflow-hidden rounded-sm border border-line bg-surface">
+                      {i.image && <Image src={i.image} alt={i.title} fill sizes="64px" className="object-cover" />}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-[15px] font-semibold">{i.title}</span>
+                      {i.options && i.options.length > 0 && (
+                        <span className="text-[13px] text-muted">{i.options.map((o) => `${o.name}: ${o.value}`).join(", ")}</span>
+                      )}
+                      <span className="text-[13px] text-muted">Qty {i.quantity}</span>
+                    </span>
+                    {i.price !== undefined && <span className="shrink-0 text-[15px] font-semibold">{formatNaira(i.price * i.quantity)}</span>}
+                  </li>
+                ))}
+              </ul>
             </section>
           ))}
         </div>
