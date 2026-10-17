@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { childrenOf, flatten, topLevel } from "@/lib/categoryTree";
+import CategoryNav from "./CategoryNav";
 import { valuesFromParams } from "@/lib/filterQuery";
 import { Filters } from "./Filters";
 import NotificationBell from "./NotificationBell";
@@ -489,7 +490,7 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
 
 // The orange button at the far end of the category row.
 const sellButton =
-  "ml-auto my-1 hidden min-h-8 shrink-0 items-center rounded-sm bg-accent px-3.5 text-sm font-semibold whitespace-nowrap text-foreground hover:brightness-95 md:flex";
+  "my-1 ml-2 hidden min-h-8 shrink-0 items-center rounded-sm bg-accent px-3.5 text-sm font-semibold whitespace-nowrap text-foreground hover:brightness-95 md:flex";
 
 export default function MainHeader() {
   const { cart } = useCart();
@@ -568,7 +569,7 @@ export default function MainHeader() {
 
       {/* Row 2: all categories */}
       <nav aria-label="Product categories" className="bg-[#1B1F27]">
-        <div className="mx-auto flex max-w-[1280px] items-center gap-1 overflow-x-auto px-4 md:px-6">
+        <div className="mx-auto flex max-w-[1280px] items-center gap-1 px-4 md:px-6">
           <button
             type="button"
             onClick={() => setDrawer(true)}
@@ -577,19 +578,7 @@ export default function MainHeader() {
             <MenuIcon />
             All
           </button>
-          {topLevel(categories).map((c) => {
-            const active = activeCats.includes(c.slug);
-            return (
-              <Link
-                key={c._id}
-                href={`/products?category=${c.slug}`}
-                aria-current={active ? "page" : undefined}
-                className={`${hit} flex min-h-10 shrink-0 items-center px-3 text-sm whitespace-nowrap ${active ? "font-bold underline decoration-accent decoration-2 underline-offset-8" : ""}`}
-              >
-                {c.name}
-              </Link>
-            );
-          })}
+          <CategoryNav categories={topLevel(categories)} activeCats={activeCats} />
           {user?.role === "vendor" ? (
             <a href={DASHBOARD_URL} className={sellButton}>
               Vendor dashboard

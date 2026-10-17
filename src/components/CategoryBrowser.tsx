@@ -17,9 +17,10 @@ export default function CategoryBrowser({ categories }: { categories: Category[]
     <section className="mx-auto max-w-[1280px] px-4 pt-8 pb-4 md:px-6 md:pt-14">
       <h2 className="mb-6 hidden text-[28px] font-semibold tracking-tight md:block">Shop by category</h2>
 
-      <div className="hidden max-h-36 grid-cols-4 gap-4 overflow-y-auto overscroll-contain pr-1 md:grid lg:grid-cols-6">
+      {/* Two rows. When there are more than fit, it scrolls sideways. */}
+      <div className="hidden snap-x snap-mandatory grid-flow-col grid-rows-2 gap-4 overflow-x-auto overscroll-x-contain pb-3 md:grid md:auto-cols-[calc((100%_-_3rem)/4)] lg:auto-cols-[calc((100%_-_5rem)/6)]">
         {categories.map((c) => (
-          <Link key={c._id} href={`/products?category=${c.slug}`} className={tile}>
+          <Link key={c._id} href={`/products?category=${c.slug}`} className={`${tile} snap-start`}>
             <span className="min-w-0 truncate">{c.name}</span>
             <span className="text-accent-ink" aria-hidden>
               →
