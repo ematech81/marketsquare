@@ -13,7 +13,12 @@ import { toApiPhone, toLocalPhone } from "@/lib/phone";
 import { NIGERIA_STATES } from "@/lib/states";
 import { DEFAULT_SETTINGS, type StoreSettings } from "@/lib/settings";
 
-type Zone = { state: string; fee: number; estimatedDays: number };
+// What delivery costs from each seller in the cart to the chosen state. A seller either has Square Market deliver
+// ("platform") or delivers it themselves ("vendor") at their own fee.
+type Quote = {
+  sellers: { vendor: string | null; name: string; available: boolean; mode?: "platform" | "vendor"; fee?: number; estimatedDays?: number }[];
+  codAllowed: boolean;
+};
 
 const panel = "rounded-sm border border-line bg-white";
 const panelTitle = "border-b border-line px-5 py-4 font-display text-xl font-semibold";
@@ -34,7 +39,7 @@ export default function CheckoutPage() {
   const { user, token, loading } = useAuth();
   const { cart, setQuantity, remove, refresh } = useCart();
   const router = useRouter();
-  const [zones, setZones] = useState<Zone[] | null>(null);
+  const [quote, setQuote] = useState<Quote | null>(null);
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
   const [state, setState] = useState("");
   const [error, setError] = useState("");
@@ -45,10 +50,20 @@ export default function CheckoutPage() {
     api<StoreSettings>("/settings")
       .then(setSettings)
       .catch(() => setSettings(DEFAULT_SETTINGS));
-    api<{ zones: Zone[] }>("/delivery-zones")
-      .then((r) => setZones(r.zones))
-      .catch(() => setZones([]));
   }, []);
+
+  // Asks the server what each seller would charge to deliver to this state, whenever the state or the cart changes.
+  const cartKey = cart.items.map((i) => `${i.id}:${i.quantity}`).join(",");
+  useEffect(() => {
+    if (!token || !state || !cartKey) return;
+    let live = true;
+    api<Quote>(`/orders/delivery-quote?state=${encodeURIComponent(state)}`, { token })
+      .then((q) => live && setQuote(q))
+      .catch(() => live && setQuote(null));
+    return () => {
+      live = false;
+    };
+  }, [token, state, cartKey]);
 
   const shell = (children: React.ReactNode) => (
     <main className="mx-auto w-full max-w-[1280px] flex-1 px-6 pt-8 pb-14">
@@ -82,16 +97,20 @@ export default function CheckoutPage() {
   }
 
   const groups = groupBySeller(cart.items);
-  const zone = zones?.find((z) => z.state === state);
-  const delivery = zone ? zone.fee * groups.length : null;
+  const quoteFor = (key: string) => (state ? quote?.sellers.find((q) => (q.vendor ?? "house") === key) : undefined);
+  const undeliverable = quote?.sellers.filter((q) => !q.available) ?? [];
+  const delivery =
+    state && quote && undeliverable.length === 0 ? quote.sellers.reduce((sum, q) => sum + (q.fee ?? 0), 0) : null;
   const total = delivery !== null ? cart.subtotal + delivery : null;
   const shortBy = Math.max(0, settings.minOrderAmount - cart.subtotal);
   // Pay on delivery is offered when the admin has it on, for orders up to the limit they set.
   const codOn = settings.codEnabled === true;
   const codMax = settings.codMaxAmount ?? 0;
   const codOverLimit = total !== null && total > codMax;
-  const payMethod = method === "cod" && codOn && !codOverLimit ? "cod" : "online";
-  const blocked = cart.items.some((i) => i.issue) || shortBy > 0;
+  // A vendor who delivers their own orders is never handed cash, so those orders are paid online.
+  const codBlockedBySeller = quote !== null && !quote.codAllowed && undeliverable.length === 0;
+  const payMethod = method === "cod" && codOn && !codOverLimit && !codBlockedBySeller ? "cod" : "online";
+  const blocked = cart.items.some((i) => i.issue) || shortBy > 0 || undeliverable.length > 0;
 
   const run = async (fn: () => Promise<void>) => {
     setError("");
@@ -160,11 +179,17 @@ export default function CheckoutPage() {
                 <span>
                   Sold by <strong>{g.seller}</strong>
                 </span>
-                <span className="text-[#45474B]">
-                  {zone
-                    ? `Delivery: ${formatNaira(zone.fee)} · about ${zone.estimatedDays} ${zone.estimatedDays === 1 ? "day" : "days"}`
-                    : "Delivery: choose your state below"}
-                </span>
+                {(() => {
+                  const q = quoteFor(g.key);
+                  if (!q) return <span className="text-[#45474B]">Delivery: choose your state below</span>;
+                  if (!q.available) return <span className="font-semibold text-[#B42318]">Does not deliver to {state}</span>;
+                  return (
+                    <span className="text-[#45474B]">
+                      Delivery: {formatNaira(q.fee ?? 0)} · about {q.estimatedDays} {q.estimatedDays === 1 ? "day" : "days"} ·{" "}
+                      {q.mode === "vendor" ? "delivered by the seller" : "delivered by Square Market"}
+                    </span>
+                  );
+                })()}
               </div>
               {g.lines.map((l) => (
                 <div key={l.id} className="flex flex-wrap items-center gap-4 border-t border-surface px-5 py-4">
@@ -231,23 +256,21 @@ export default function CheckoutPage() {
               <option value="" disabled>
                 Choose your state
               </option>
-              {/* Every state is listed. States we do not deliver to yet are greyed out. */}
-              {NIGERIA_STATES.map((name) => {
-                const available = zones?.some((z) => z.state === name) ?? false;
-                return (
-                  <option key={name} value={name} disabled={!available}>
-                    {available ? name : `${name} (not available yet)`}
-                  </option>
-                );
-              })}
+              {/* Every state is listed. Once you pick one, each seller shows whether and how they deliver there. */}
+              {NIGERIA_STATES.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
             </SelectField>
             <Field compact label="City / local government area" name="city" required />
             <div className="col-span-full">
               <Field compact label="Nearest landmark" name="landmark" optional />
             </div>
-            {zones?.length === 0 && (
-              <p className="col-span-full text-sm text-[#B42318]">
-                We cannot take orders yet because delivery fees have not been set up. Please check back soon.
+            {undeliverable.length > 0 && (
+              <p role="alert" className="col-span-full rounded-sm border border-[#B42318] bg-[#FEF3F2] p-3 text-sm text-[#B42318]">
+                {undeliverable.map((u) => u.name).join(", ")} {undeliverable.length === 1 ? "does" : "do"} not deliver to {state}. Remove{" "}
+                {undeliverable.length === 1 ? "their items" : "those items"} from your cart, or choose another state.
               </p>
             )}
           </form>
@@ -265,10 +288,12 @@ export default function CheckoutPage() {
                       {
                         id: "cod",
                         title: "Pay on delivery",
-                        body: codOverLimit
+                        body: codBlockedBySeller
+                          ? "Not available for this order: a seller in your cart delivers their own orders, and those are paid online."
+                          : codOverLimit
                           ? `Pay on delivery is for orders up to ${formatNaira(codMax)}. Please pay now for this order.`
                           : `Pay ${total !== null ? formatNaira(total) : "the total"} when your order arrives. Please have the amount ready.${total === null ? ` Available for orders up to ${formatNaira(codMax)}.` : ""}`,
-                        disabled: codOverLimit,
+                        disabled: codOverLimit || codBlockedBySeller,
                       },
                     ]
                   : []),
@@ -307,7 +332,10 @@ export default function CheckoutPage() {
         {groups.map((g) => (
           <p key={g.key} className="flex justify-between text-[15px]">
             <span className="text-[#45474B]">Delivery, {g.seller}</span>
-            <span>{zone ? formatNaira(zone.fee) : "Choose a state"}</span>
+            <span>{(() => {
+              const q = quoteFor(g.key);
+              return q ? (q.available ? formatNaira(q.fee ?? 0) : "Not available") : "Choose a state";
+            })()}</span>
           </p>
         ))}
         <p className="flex items-baseline justify-between border-t-2 border-foreground pt-4">

@@ -9,12 +9,12 @@ type Zone = { state: string; fee: number; estimatedDays: number };
 const KEY = "sm_state";
 
 // "+ shipping from ₦2,000 to Lagos", under the price. It follows the state chosen in the header.
-export default function ShippingFrom() {
+export default function ShippingFrom({ vendorId = null }: { vendorId?: string | null }) {
   const [zones, setZones] = useState<Zone[] | null>(null);
   const [state, setState] = useState("");
 
   useEffect(() => {
-    api<{ zones: Zone[] }>("/delivery-zones")
+    api<{ zones: Zone[] }>(`/delivery-states${vendorId ? `?vendor=${vendorId}` : ""}`)
       .then((r) => setZones(r.zones))
       .catch(() => setZones([]));
     const read = () => {
@@ -31,7 +31,7 @@ export default function ShippingFrom() {
       clearTimeout(timer);
       window.removeEventListener("sm-state-change", read);
     };
-  }, []);
+  }, [vendorId]);
 
   if (!zones || zones.length === 0) return null;
   const zone = zones.find((z) => z.state === state);

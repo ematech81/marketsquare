@@ -15,6 +15,13 @@ type Shipment = {
   status: "placed" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled";
   timeline: { status: string; at: string }[];
   estimatedDelivery?: string;
+  // 'vendor' means the seller delivers it themselves, and the customer gives them the code when it arrives.
+  fulfilledBy?: "platform" | "vendor";
+  delivery?: { courierName?: string; courierPhone?: string; note?: string };
+  deliveryCode?: string;
+  canConfirm?: boolean;
+  canReport?: boolean;
+  dispute?: { status: "open" | "released" | "refunded"; reason?: string };
   items: { title: string; quantity: number; image?: string; price?: number; options?: { name: string; value: string }[] }[];
 };
 
@@ -115,6 +122,11 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
   const [error, setError] = useState("");
   // True once we have checked for a while and the payment is still not confirmed.
   const [stalled, setStalled] = useState(false);
+  // "I received my order" and "Report a problem" on one shipment at a time.
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [reporting, setReporting] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     if (!token) return;
@@ -144,6 +156,21 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
       clearTimeout(timer);
     };
   }, [token, orderNumber, refresh]);
+
+  async function shipmentAction(shipmentId: string, path: "confirm-delivery" | "report", body?: { reason: string }) {
+    setActionBusy(shipmentId);
+    setActionError("");
+    try {
+      const res = await api<{ order: Order }>(`/orders/${orderNumber}/shipments/${shipmentId}/${path}`, { method: "POST", token, body });
+      setOrder(res.order);
+      setReporting(null);
+      setReason("");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setActionBusy(null);
+    }
+  }
 
   if (loading) return <p className="text-muted">Loading…</p>;
   if (!user) {
@@ -263,6 +290,7 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
                     Shipment {n + 1} of {order.shipments.length} · Sold by
                   </span>
                   <h2 className="font-display text-[22px] font-semibold">{s.vendorName}</h2>
+                  <span className="text-[13px] text-muted">{s.fulfilledBy === "vendor" ? "Delivered by the seller" : "Delivered by Square Market"}</span>
                 </div>
                 {s.estimatedDelivery && s.status !== "delivered" && s.status !== "cancelled" && (
                   <div className="flex flex-col gap-1 text-right">
@@ -305,6 +333,112 @@ export default function OrderView({ orderNumber }: { orderNumber: string }) {
                     </li>
                   ))}
                 </ol>
+              )}
+
+              {/* The seller delivers: who is bringing it, and the code to give them when it arrives */}
+              {s.fulfilledBy === "vendor" && s.status === "shipped" && (
+                <div className="flex flex-col gap-3 border-t border-line bg-[#FFF8F5] px-6 py-5">
+                  {s.delivery?.courierName && (
+                    <p className="text-[15px]">
+                      <strong>On its way with:</strong> {s.delivery.courierName}
+                      {s.delivery.courierPhone && (
+                        <>
+                          {" "}
+                          <a href={`tel:${s.delivery.courierPhone}`} className="font-semibold text-accent-ink underline">
+                            {s.delivery.courierPhone}
+                          </a>
+                        </>
+                      )}
+                      {s.delivery.note ? ` (${s.delivery.note})` : ""}
+                    </p>
+                  )}
+                  {s.deliveryCode && (
+                    <div>
+                      <p className="text-sm text-[#45474B]">Your delivery code. Give it to the person delivering only when you have received your items.</p>
+                      <p aria-label={`Delivery code ${s.deliveryCode.split("").join(" ")}`} className="mt-1 font-mono text-[34px] font-bold tracking-[0.35em]">
+                        {s.deliveryCode}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {s.dispute?.status === "open" && (
+                <p className="border-t border-line bg-[#FEF3F2] px-6 py-4 text-sm text-[#B42318]">
+                  <strong>You reported a problem.</strong> Square Market is looking into it and will contact you.
+                </p>
+              )}
+              {s.dispute && s.dispute.status !== "open" && (
+                <p className="border-t border-line bg-background px-6 py-4 text-sm text-[#45474B]">
+                  You reported a problem with this order. Square Market reviewed it{s.dispute.status === "refunded" ? " and will refund you" : " and the order stands"}.
+                </p>
+              )}
+
+              {(s.canConfirm || s.canReport) && (
+                <div className="flex flex-col gap-3 border-t border-line bg-background px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {s.canConfirm && (
+                      <button
+                        type="button"
+                        disabled={actionBusy === s._id}
+                        onClick={() => shipmentAction(s._id, "confirm-delivery")}
+                        className="min-h-11 cursor-pointer rounded-sm bg-accent px-5 text-sm font-semibold text-foreground hover:brightness-95 disabled:opacity-60"
+                      >
+                        {actionBusy === s._id ? "Please wait…" : "I received my order"}
+                      </button>
+                    )}
+                    {s.canReport && reporting !== s._id && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReporting(s._id);
+                          setActionError("");
+                        }}
+                        className="min-h-11 cursor-pointer rounded-sm border border-[#C6C6CB] bg-white px-5 text-sm font-semibold hover:border-foreground"
+                      >
+                        Report a problem
+                      </button>
+                    )}
+                  </div>
+                  {reporting === s._id && (
+                    <form
+                      className="flex max-w-xl flex-col gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        shipmentAction(s._id, "report", { reason });
+                      }}
+                    >
+                      <label htmlFor={`reason-${s._id}`} className="text-sm font-medium">
+                        What is wrong?
+                      </label>
+                      <textarea
+                        id={`reason-${s._id}`}
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        rows={3}
+                        minLength={10}
+                        maxLength={500}
+                        required
+                        placeholder="For example: the delivery person has not come, or an item is missing or damaged."
+                        className="rounded-sm border border-[#C6C6CB] bg-white p-3 text-[15px] outline-none focus:border-accent"
+                      />
+                      <p className="text-[13px] text-muted">We will hold the seller&apos;s payment until we have looked into it.</p>
+                      <div className="flex gap-3">
+                        <button type="submit" disabled={actionBusy === s._id} className="min-h-11 cursor-pointer rounded-sm bg-foreground px-5 text-sm font-semibold text-white disabled:opacity-60">
+                          {actionBusy === s._id ? "Sending…" : "Send"}
+                        </button>
+                        <button type="button" onClick={() => setReporting(null)} className="min-h-11 cursor-pointer px-3 text-sm font-semibold text-[#45474B]">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                  {actionError && (reporting === s._id || actionBusy === null) && (
+                    <p role="alert" className="text-sm text-[#B42318]">
+                      {actionError}
+                    </p>
+                  )}
+                </div>
               )}
 
               <ul className="m-0 list-none divide-y divide-line border-t border-line bg-background p-0">

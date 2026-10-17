@@ -14,8 +14,10 @@ const row = "flex items-start gap-3 border-t border-line px-4 py-3.5";
 
 // "Delivery & Returns": choose your state, see the fee and the date it should arrive, and the return rule.
 // The state is shared with the header's "Delivering to" picker.
-export default function DeliveryCard() {
+export default function DeliveryCard({ vendorId = null }: { vendorId?: string | null }) {
   const [zones, setZones] = useState<Zone[] | null>(null);
+  // Who delivers this seller's products: Square Market, or the seller (at their own fees, for the states they serve).
+  const [mode, setMode] = useState<"platform" | "vendor">("platform");
   const [state, setState] = useState("");
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
 
@@ -23,8 +25,9 @@ export default function DeliveryCard() {
     api<StoreSettings>("/settings")
       .then(setSettings)
       .catch(() => setSettings(DEFAULT_SETTINGS));
-    api<{ zones: Zone[] }>("/delivery-zones")
-      .then(({ zones: z }) => {
+    api<{ mode: "platform" | "vendor"; zones: Zone[] }>(`/delivery-states${vendorId ? `?vendor=${vendorId}` : ""}`)
+      .then(({ mode: m, zones: z }) => {
+        setMode(m);
         setZones(z);
         let saved = "";
         try {
@@ -35,7 +38,7 @@ export default function DeliveryCard() {
         setState(z.find((x) => x.state === saved)?.state ?? z.find((x) => x.state === "Lagos")?.state ?? z[0]?.state ?? "");
       })
       .catch(() => setZones([]));
-  }, []);
+  }, [vendorId]);
 
   // The header's "Delivering to" picker saves the choice and announces it.
   useEffect(() => {
@@ -111,6 +114,7 @@ export default function DeliveryCard() {
         </span>
         <div className="flex flex-col gap-0.5 text-sm">
           <strong>Door delivery</strong>
+          {zones !== null && zones.length > 0 && <span className="text-[13px] text-muted">{mode === "vendor" ? "Delivered by the seller" : "Delivered by Square Market"}</span>}
           {zone ? (
             <>
               <span className="text-[#45474B]">Delivery fee {formatNaira(zone.fee)}</span>
@@ -120,9 +124,12 @@ export default function DeliveryCard() {
               </span>
             </>
           ) : (
-            <span className="text-[#45474B]">{zones === null ? "Checking delivery…" : "Delivery fees are shown at checkout."}</span>
+            <span className="text-[#45474B]">
+              {zones === null ? "Checking delivery…" : mode === "vendor" ? "This seller has not set where they deliver yet." : "Delivery fees are shown at checkout."}
+            </span>
           )}
-          {settings.codEnabled && <span className="text-[13px] text-muted">Pay on delivery available at checkout.</span>}
+          {settings.codEnabled && mode === "platform" && <span className="text-[13px] text-muted">Pay on delivery available at checkout.</span>}
+          {mode === "vendor" && <span className="text-[13px] text-muted">Paid online. You get a code to give the person who delivers.</span>}
         </div>
       </div>
 

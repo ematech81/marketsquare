@@ -149,7 +149,7 @@ async function Details({ params }: { params: Params }) {
                   {discount > 0 && <span className="rounded-sm bg-[#FBEAE4] px-1.5 py-0.5 text-[13px] font-bold text-[#8A3219]">-{discount}%</span>}
                 </p>
                 {lowStock && <p className="text-[13px] font-semibold text-[#B42318]">Only {product.stock} left in stock</p>}
-                <ShippingFrom />
+                <ShippingFrom vendorId={product.seller.id} />
                 {product.ratingCount > 0 ? (
                   <a href="#reviews" className="flex items-center gap-2 text-sm text-accent-ink hover:text-foreground">
                     <Stars value={product.ratingAverage} size={18} />
@@ -251,7 +251,7 @@ async function Details({ params }: { params: Params }) {
         </div>
 
         <aside className="flex min-w-0 flex-[1_1_300px] flex-col gap-6 self-stretch lg:max-w-[380px]">
-          <DeliveryCard />
+          <DeliveryCard vendorId={product.seller.id} />
 
           <section className={card} aria-labelledby="seller-heading">
             <h2 id="seller-heading" className={`px-4 py-3 ${smallTitle}`}>
