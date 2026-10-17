@@ -20,7 +20,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="group relative flex flex-col rounded-sm border border-line bg-white transition duration-200 hover:-translate-y-1 hover:border-foreground hover:shadow-[5px_5px_0_0_var(--accent)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-      <Link href={href} aria-label={product.title} className="relative block aspect-square overflow-hidden md:aspect-[4/3] rounded-t-sm bg-[radial-gradient(circle_at_30%_20%,#ffffff_0%,#EEF0F2_55%,#E1E5E9_100%)]">
+      <Link href={href} aria-label={product.title} className="relative block aspect-square overflow-hidden md:aspect-[5/4] rounded-t-sm bg-[radial-gradient(circle_at_30%_20%,#ffffff_0%,#EEF0F2_55%,#E1E5E9_100%)]">
         {/* The stage behind the product */}
         <span aria-hidden className="absolute -right-12 -bottom-12 size-44 rotate-12 bg-accent/15 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 motion-reduce:transition-none" />
         <span aria-hidden className="absolute inset-x-10 bottom-5 h-4 rounded-[50%] bg-foreground/15 blur-md" />
@@ -31,7 +31,7 @@ export default function ProductCard({ product }: { product: Product }) {
             alt={image.alt || product.title}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-contain p-5 md:p-4 mix-blend-multiply transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
+            className="object-contain p-1.5 md:p-1 mix-blend-multiply transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
           />
         ) : (
           <span className="absolute inset-0 flex items-center justify-center">
