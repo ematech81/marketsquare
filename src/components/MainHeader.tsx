@@ -538,18 +538,18 @@ export default function MainHeader() {
           <LocationPicker />
         </div>
 
-        <div className="order-4 w-full min-w-0 md:order-none md:w-auto md:min-w-64 md:flex-1">
+        <div className="order-4 w-full min-w-0 lg:order-none lg:w-auto lg:min-w-64 lg:flex-1">
           <SearchBar categories={categories} />
         </div>
 
-        <div className="ml-auto hidden items-center gap-1 md:ml-0 md:flex">
+        <div className="ml-auto hidden items-center gap-1 md:flex lg:ml-0">
           <AccountMenu />
           <Link href="/orders" className={`${hit} flex min-h-11 items-center px-2 py-1`}>
             <TwoLine small="Returns" big="& Orders" />
           </Link>
         </div>
 
-        <div className="ml-auto flex items-center gap-1 md:ml-0">
+        <div className="ml-auto flex items-center gap-1 lg:ml-0">
         <NotificationBell />
         <Link
           href="/checkout"
