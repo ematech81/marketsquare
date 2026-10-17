@@ -42,6 +42,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {!product.inStock && <span aria-hidden className="absolute inset-0 bg-white/55" />}
 
         <span className="absolute top-2 left-2 flex flex-col items-start gap-1.5 md:top-3 md:left-3">
+          {product.ageRestricted && <span className="bg-[#B42318] px-2 py-1 text-xs leading-none font-bold text-white">18+</span>}
           {discount > 0 && (
             <span className="bg-accent px-2 py-1 text-xs leading-none font-bold text-foreground">-{discount}%</span>
           )}

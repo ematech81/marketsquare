@@ -131,6 +131,9 @@ async function Details({ params }: { params: Params }) {
                 {discount >= 30 && (
                   <span className="self-start rounded-sm bg-accent px-2 py-1 text-xs font-bold text-foreground">Big saving</span>
                 )}
+                {product.ageRestricted && (
+                  <span className="self-start rounded-sm bg-[#B42318] px-2 py-1 text-xs font-bold text-white">18+ · For adults only</span>
+                )}
                 <h1 className="text-[26px] leading-[1.2] font-bold tracking-[-0.015em]">{product.title}</h1>
                 {(product.brand || product.sku) && (
                   <p className="text-[13px] text-muted">
@@ -168,6 +171,12 @@ async function Details({ params }: { params: Params }) {
                   </a>
                 )}
               </div>
+
+              {product.ageRestricted && (
+                <p className="rounded-sm border border-[#B42318] bg-[#FEF3F2] p-3 text-[13px] leading-relaxed text-[#7A271A]">
+                  <strong>You must be 18 or older to buy this.</strong> You will confirm your age at checkout, and the delivery person may ask to see your ID.
+                </p>
+              )}
 
               <BuyBox productId={product.id} inStock={product.inStock} stock={product.stock} variants={product.variants} />
 

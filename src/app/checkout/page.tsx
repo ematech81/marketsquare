@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [method, setMethod] = useState<"online" | "cod">("online");
+  const [ageOk, setAgeOk] = useState(false);
 
   useEffect(() => {
     api<StoreSettings>("/settings")
@@ -110,7 +111,9 @@ export default function CheckoutPage() {
   // A vendor who delivers their own orders is never handed cash, so those orders are paid online.
   const codBlockedBySeller = quote !== null && !quote.codAllowed && undeliverable.length === 0;
   const payMethod = method === "cod" && codOn && !codOverLimit && !codBlockedBySeller ? "cod" : "online";
-  const blocked = cart.items.some((i) => i.issue) || shortBy > 0 || undeliverable.length > 0;
+  // Items for adults only (18+): the buyer must say they are 18 or older.
+  const adultItems = cart.items.filter((i) => i.product.ageRestricted);
+  const blocked = cart.items.some((i) => i.issue) || shortBy > 0 || undeliverable.length > 0 || (adultItems.length > 0 && !ageOk);
 
   const run = async (fn: () => Promise<void>) => {
     setError("");
@@ -134,6 +137,7 @@ export default function CheckoutPage() {
         body: {
           email: get("email") || undefined,
           paymentMethod: payMethod,
+          ageConfirmed: adultItems.length > 0 ? ageOk : undefined,
           address: {
             fullName: get("fullName"),
             phone: toApiPhone(get("phone")),
@@ -276,6 +280,19 @@ export default function CheckoutPage() {
           </form>
         </section>
 
+        {adultItems.length > 0 && (
+          <section className="rounded-sm border border-[#B42318] bg-[#FEF3F2] p-5">
+            <h2 className="mb-2 font-display text-lg font-semibold text-[#7A271A]">Items for adults only (18+)</h2>
+            <p className="mb-3 text-sm text-[#7A271A]">{adultItems.map((i) => i.product.title).join(", ")}</p>
+            <label className="flex cursor-pointer items-start gap-3 text-sm text-[#7A271A]">
+              <input type="checkbox" checked={ageOk} onChange={(e) => setAgeOk(e.target.checked)} className="mt-0.5 size-[18px] shrink-0 accent-accent" />
+              <span>
+                <strong>I am 18 or older.</strong> I understand the delivery person may ask to see my ID, and will not hand these items to anyone under 18.
+              </span>
+            </label>
+          </section>
+        )}
+
         <section className={panel}>
           <h2 className={panelTitle}>3. Payment</h2>
           <fieldset className="flex flex-col gap-3 p-5">
@@ -347,7 +364,11 @@ export default function CheckoutPage() {
         </Button>
         {blocked && (
           <p className="text-center text-[13px] text-[#B42318]">
-            {shortBy > 0 ? `Add ${formatNaira(shortBy)} more to reach the minimum order.` : "Fix the items marked above to continue."}
+            {shortBy > 0
+              ? `Add ${formatNaira(shortBy)} more to reach the minimum order.`
+              : adultItems.length > 0 && !ageOk && !cart.items.some((i) => i.issue) && undeliverable.length === 0
+                ? "Confirm that you are 18 or older to continue."
+                : "Fix the items marked above to continue."}
           </p>
         )}
         <p className="text-center text-[13px] leading-normal text-muted">

@@ -8,7 +8,7 @@ import { formatNaira } from "@/lib/format";
 
 type Row = { orderNumber: string; total: number; paymentStatus: string; paymentMethod?: string; progress?: string; createdAt: string; items: { title: string }[] };
 
-const STATUS: Record<string, string> = { paid: "Paid", pending: "Awaiting payment", mismatch: "Needs attention", cod: "Pay on delivery" };
+const STATUS: Record<string, string> = { paid: "Paid", pending: "Awaiting payment", mismatch: "Needs attention", cod: "Pay on delivery", cancelled: "Cancelled" };
 
 export default function OrdersPage() {
   const { token, user, loading } = useAuth();
@@ -52,7 +52,8 @@ export default function OrdersPage() {
                   <span className="block font-display text-lg font-bold">{formatNaira(o.total)}</span>
                   <span className="block text-sm text-muted">
                     {o.progress ? `${o.progress} · ` : ""}
-                    {STATUS[o.paymentStatus] ?? o.paymentStatus} ·{" "}
+                    {/* A cancelled order needs no payment label next to "Cancelled" */}
+                    {o.progress === "Cancelled" ? "" : `${STATUS[o.paymentStatus] ?? o.paymentStatus} · `}
                     {new Date(o.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
                   </span>
                   <span className="mt-1 block text-sm font-semibold text-accent-ink">Track order →</span>

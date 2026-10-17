@@ -22,6 +22,8 @@ export type Product = {
   gtin?: string;
   tags: string[];
   highlights?: string[];
+  // For adults only (18+).
+  ageRestricted?: boolean;
   details: { label: string; value: string }[];
   seoTitle?: string;
   seoDescription?: string;

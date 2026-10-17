@@ -7,7 +7,7 @@ import { useHydrated } from "./hydrated";
 
 export type CartLine = {
   id: string;
-  product: { id: string; title: string; slug: string; image: string | null; seller: { id: string | null; name: string } };
+  product: { id: string; title: string; slug: string; image: string | null; seller: { id: string | null; name: string }; ageRestricted?: boolean };
   price: number;
   quantity: number;
   options: { name: string; value: string }[];
