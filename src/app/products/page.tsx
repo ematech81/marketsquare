@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { buildQuery, Filters, OpenMenuButton, SortSelect, type FilterValues } from "@/components/Filters";
+import { Filters, OpenMenuButton, SortSelect } from "@/components/Filters";
+import { buildQuery, type FilterValues } from "@/lib/filterQuery";
 import ProductCard from "@/components/ProductCard";
 import { getCategories, getProducts } from "@/lib/catalog";
+import { childrenOf, pathOf } from "@/lib/categoryTree";
 import { getStores } from "@/lib/stores";
 import { formatNaira } from "@/lib/format";
 
@@ -60,6 +62,13 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
       ? selected[0].name
       : "All products";
 
+  // Looking at one category: where it sits, and what is inside it.
+  const current = selected.length === 1 ? selected[0] : null;
+  const trail = current ? pathOf(categories, current._id) : [];
+  const subs = current ? childrenOf(categories, current._id) : [];
+  const parentOfCurrent = trail.length > 1 ? trail[trail.length - 2] : null;
+  const only = (slug: string) => buildQuery({ ...values, categories: [slug], page: 1 });
+
   const chips = [
     ...(values.q ? [`Search: ${values.q}`] : []),
     ...selected.map((c) => c.name),
@@ -80,7 +89,25 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
         <Link href="/" className="hover:text-foreground">
           Home
         </Link>{" "}
-        / <span className="text-foreground">{title}</span>
+        /{" "}
+        {trail.length > 1 ? (
+          trail.map((c, i) =>
+            i === trail.length - 1 ? (
+              <span key={c._id} className="text-foreground">
+                {c.name}
+              </span>
+            ) : (
+              <span key={c._id}>
+                <Link href={only(c.slug)} className="hover:text-foreground">
+                  {c.name}
+                </Link>{" "}
+                /{" "}
+              </span>
+            ),
+          )
+        ) : (
+          <span className="text-foreground">{title}</span>
+        )}
       </nav>
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
@@ -100,6 +127,21 @@ async function Results({ searchParams }: { searchParams: SearchParams }) {
         <Filters categories={categories} vendors={stores.map((s) => ({ id: s.id, name: s.name }))} values={values} className="max-md:hidden" />
 
         <section className="w-full min-w-0 flex-1">
+          {(subs.length > 0 || parentOfCurrent) && (
+            <div className="mb-5 flex flex-wrap items-center gap-2 text-[13px]">
+              {parentOfCurrent && (
+                <Link href={only(parentOfCurrent.slug)} className="rounded-sm border border-line bg-white px-3 py-2 font-medium hover:border-foreground">
+                  ‹ {parentOfCurrent.name}
+                </Link>
+              )}
+              {subs.length > 0 && <span className="text-[#45474B]">Inside {current?.name}:</span>}
+              {subs.map((c) => (
+                <Link key={c._id} href={only(c.slug)} className="rounded-sm border border-line bg-white px-3 py-2 font-semibold hover:border-foreground">
+                  {c.name}
+                </Link>
+              ))}
+            </div>
+          )}
           {chips.length > 0 && (
             <div className="mb-5 flex flex-wrap items-center gap-2 text-[13px]">
               <span className="text-[#45474B]">Active filters:</span>

@@ -6,7 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
-import { Filters, valuesFromParams } from "./Filters";
+import { childrenOf, flatten, topLevel } from "@/lib/categoryTree";
+import { valuesFromParams } from "@/lib/filterQuery";
+import { Filters } from "./Filters";
 import NotificationBell from "./NotificationBell";
 import WholesaleBar from "./WholesaleBar";
 
@@ -220,8 +222,9 @@ function SearchBar({ categories }: { categories: Category[] }) {
         className="max-w-[9.5rem] shrink-0 cursor-pointer truncate border-0 border-r border-[#C6C6CB] bg-[#E9ECEF] px-3 text-[13px] text-[#45474B] outline-none hover:bg-[#DDE1E6]"
       >
         <option value="">All</option>
-        {categories.map((c) => (
+        {flatten(categories).map((c) => (
           <option key={c._id} value={c.slug}>
+            {"\u00A0\u00A0".repeat(c.depth)}
             {c.name}
           </option>
         ))}
@@ -345,6 +348,15 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
   const params = useSearchParams();
   const onProducts = pathname === "/products";
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
+  // Which categories are opened to show what is inside them.
+  const [opened, setOpened] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setOpened((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   useEffect(() => {
     if (!open || !onProducts) return;
@@ -369,6 +381,42 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
   const row = "flex min-h-12 items-center justify-between px-5 text-[15px] text-foreground hover:bg-surface";
   const primaryRow = "flex min-h-12 items-center justify-between bg-accent px-5 text-[15px] font-semibold text-foreground hover:brightness-95";
 
+  // Fashion, and under it Men's fashion, and under that Men's shoes. A + opens what is inside a category.
+  const tree = (parent: string | null, depth: number): React.ReactNode =>
+    childrenOf(categories, parent).map((c) => {
+      const kids = childrenOf(categories, c._id);
+      return (
+        <div key={c._id}>
+          <div className="flex items-stretch">
+            <Link
+              href={`/products?category=${c.slug}`}
+              onClick={onClose}
+              className="flex min-h-12 min-w-0 flex-1 items-center pr-2 text-[15px] text-foreground hover:bg-surface"
+              style={{ paddingLeft: 20 + depth * 18 }}
+            >
+              {c.name}
+            </Link>
+            {kids.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => toggle(c._id)}
+                aria-expanded={opened.has(c._id)}
+                aria-label={`${opened.has(c._id) ? "Hide" : "Show"} what is inside ${c.name}`}
+                className="flex w-12 shrink-0 cursor-pointer items-center justify-center text-xl hover:bg-surface"
+              >
+                {opened.has(c._id) ? "−" : "+"}
+              </button>
+            ) : (
+              <span aria-hidden className="flex w-12 shrink-0 items-center justify-center">
+                ›
+              </span>
+            )}
+          </div>
+          {kids.length > 0 && opened.has(c._id) && <div className="bg-[#F8F9FA]">{tree(c._id, depth + 1)}</div>}
+        </div>
+      );
+    });
+
   return (
     <div className="fixed inset-0 z-[60]">
       <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 cursor-default bg-black/60" tabIndex={-1} />
@@ -386,11 +434,7 @@ function Drawer({ open, onClose, categories }: { open: boolean; onClose: () => v
           <Link href="/products" onClick={onClose} className={row}>
             All products <span aria-hidden>›</span>
           </Link>
-          {categories.map((c) => (
-            <Link key={c._id} href={`/products?category=${c.slug}`} onClick={onClose} className={row}>
-              {c.name} <span aria-hidden>›</span>
-            </Link>
-          ))}
+          {tree(null, 0)}
         </div>
 
         {onProducts && (
@@ -533,7 +577,7 @@ export default function MainHeader() {
             <MenuIcon />
             All
           </button>
-          {categories.map((c) => {
+          {topLevel(categories).map((c) => {
             const active = activeCats.includes(c.slug);
             return (
               <Link

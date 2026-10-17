@@ -72,8 +72,13 @@ export function breadcrumbJsonLd(product: Product) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: product.category.name, item: `${SITE_URL}/products?category=${product.category.slug}` },
-      { "@type": "ListItem", position: 3, name: product.title, item: productUrl(product.slug) },
+      ...(product.categoryPath?.length ? product.categoryPath : [product.category]).map((c, i) => ({
+        "@type": "ListItem",
+        position: i + 2,
+        name: c.name,
+        item: `${SITE_URL}/products?category=${c.slug}`,
+      })),
+      { "@type": "ListItem", position: (product.categoryPath?.length || 1) + 2, name: product.title, item: productUrl(product.slug) },
     ],
   };
 }

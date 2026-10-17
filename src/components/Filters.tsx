@@ -2,47 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { flatten } from "@/lib/categoryTree";
+import { buildQuery, type FilterValues } from "@/lib/filterQuery";
 
-export type FilterValues = {
-  q: string;
-  categories: string[];
-  vendors: string[];
-  minPrice: string;
-  maxPrice: string;
-  fourStars: boolean;
-  inStock: boolean;
-  sort: string;
-};
-
-// Reads the filters back out of the address bar. The menu on phones uses this, because it is not part of the page.
-export function valuesFromParams(get: (key: string) => string | null): FilterValues {
-  const list = (v: string | null) => (v ?? "").split(",").filter(Boolean);
-  return {
-    q: get("q") ?? "",
-    categories: list(get("category")),
-    vendors: list(get("vendor")),
-    minPrice: get("minPrice") ?? "",
-    maxPrice: get("maxPrice") ?? "",
-    fourStars: get("minRating") === "4",
-    inStock: get("inStock") === "1",
-    sort: get("sort") || "newest",
-  };
-}
-
-export function buildQuery(v: Partial<FilterValues> & { page?: number }) {
-  const p = new URLSearchParams();
-  if (v.q) p.set("q", v.q);
-  if (v.categories?.length) p.set("category", v.categories.join(","));
-  if (v.vendors?.length) p.set("vendor", v.vendors.join(","));
-  if (v.minPrice) p.set("minPrice", v.minPrice);
-  if (v.maxPrice) p.set("maxPrice", v.maxPrice);
-  if (v.fourStars) p.set("minRating", "4");
-  if (v.inStock) p.set("inStock", "1");
-  if (v.sort && v.sort !== "newest") p.set("sort", v.sort);
-  if (v.page && v.page > 1) p.set("page", String(v.page));
-  const s = p.toString();
-  return s ? `/products?${s}` : "/products";
-}
+// Kept here so older imports of these keep working.
+export type { FilterValues } from "@/lib/filterQuery";
 
 const legend = "mb-2 p-0 text-sm font-semibold";
 const check = "flex min-h-9 items-center gap-2.5 text-sm";
@@ -59,7 +23,7 @@ export function Filters({
   hideCategories = false,
   onApply,
 }: {
-  categories: { name: string; slug: string }[];
+  categories: { _id: string; name: string; slug: string; parent?: string | null }[];
   // "house" is the store's own products. Only shown when vendors are selling.
   vendors?: { id: string; name: string }[];
   values: FilterValues;
@@ -88,8 +52,8 @@ export function Filters({
       {categories.length > 0 && !hideCategories && (
         <fieldset className="flex max-h-56 flex-col gap-1 overflow-y-auto overscroll-contain border-0 p-0">
           <legend className={legend}>Category</legend>
-          {categories.map((c) => (
-            <label key={c.slug} className={check}>
+          {flatten(categories).map((c) => (
+            <label key={c.slug} className={check} style={{ paddingLeft: c.depth * 18 }}>
               <input
                 type="checkbox"
                 className={box}

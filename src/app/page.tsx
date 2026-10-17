@@ -5,6 +5,7 @@ import HeroCarousel from "@/components/HeroCarousel";
 import ProductCard from "@/components/ProductCard";
 import { getBanners } from "@/lib/banners";
 import { getCategories, getProducts } from "@/lib/catalog";
+import { topLevel } from "@/lib/categoryTree";
 import { getStores } from "@/lib/stores";
 
 // Tile colours from the design: dark, light, accent, light.
@@ -116,7 +117,7 @@ function HeroText({ tiles }: { tiles: Tile[] | null }) {
 async function Hero() {
   const [banners, categories] = await Promise.all([getBanners(), getCategories().catch(() => [])]);
   if (banners.length > 0) return <HeroCarousel banners={banners} />;
-  return <HeroText tiles={categories.slice(0, 4)} />;
+  return <HeroText tiles={topLevel(categories).slice(0, 4)} />;
 }
 
 async function Catalog() {
@@ -128,7 +129,7 @@ async function Catalog() {
 
   return (
     <>
-      {categories.length > 0 && <CategoryBrowser categories={categories} />}
+      {categories.length > 0 && <CategoryBrowser categories={topLevel(categories)} />}
 
       <section className="mx-auto max-w-[1280px] px-6 py-10">
         <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">

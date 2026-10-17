@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { api, ApiError } from "./api";
 
-export type Category = { _id: string; name: string; slug: string; image?: string };
+export type Category = { _id: string; name: string; slug: string; image?: string; parent?: string | null };
 
 export type Product = {
   id: string;
@@ -27,6 +27,8 @@ export type Product = {
   seoDescription?: string;
   updatedAt: string;
   seller: { id: string | null; name: string };
+  // From the top down, for the breadcrumb: Fashion, Men's fashion, Men's shoes. Only sent with a single product.
+  categoryPath?: { name: string; slug: string }[];
 };
 
 export type ProductList = { products: Product[]; page: number; pages: number; total: number };

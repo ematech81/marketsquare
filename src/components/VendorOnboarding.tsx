@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { toApiPhone, toLocalPhone } from "@/lib/phone";
+import { topLevel } from "@/lib/categoryTree";
 import { NIGERIA_STATES } from "@/lib/states";
 import { ErrorText, Field, PhoneField, SelectField } from "./form";
 
@@ -12,7 +13,7 @@ const DASHBOARD_URL = process.env.NEXT_PUBLIC_DASHBOARD_URL ?? "http://localhost
 const DRAFT_KEY = "sm_vendor_draft";
 const OTHER = "__other__";
 
-type Category = { _id: string; name: string };
+type Category = { _id: string; name: string; slug: string; parent?: string | null };
 
 type Values = {
   businessName: string;
@@ -443,7 +444,7 @@ export default function VendorOnboarding() {
               <option value="" disabled>
                 Choose a category
               </option>
-              {categories.map((c) => (
+              {topLevel(categories).map((c) => (
                 <option key={c._id} value={c.name}>
                   {c.name}
                 </option>

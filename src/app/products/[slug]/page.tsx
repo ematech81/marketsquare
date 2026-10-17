@@ -107,10 +107,15 @@ async function Details({ params }: { params: Params }) {
           Home
         </Link>{" "}
         &gt;{" "}
-        <Link href={`/products?category=${product.category.slug}`} className="hover:text-foreground">
-          {product.category.name}
-        </Link>{" "}
-        &gt; <span className="text-foreground">{product.title}</span>
+        {(product.categoryPath?.length ? product.categoryPath : [product.category]).map((c) => (
+          <span key={c.slug}>
+            <Link href={`/products?category=${c.slug}`} className="hover:text-foreground">
+              {c.name}
+            </Link>{" "}
+            &gt;{" "}
+          </span>
+        ))}
+        <span className="text-foreground">{product.title}</span>
       </nav>
 
       <div className="flex flex-wrap items-start gap-6">
