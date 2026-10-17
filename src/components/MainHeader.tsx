@@ -519,7 +519,7 @@ export default function MainHeader() {
   return (
     <header className="bg-foreground text-white print:hidden">
       {/* Row 1: logo, location, search, account, orders, cart */}
-      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 md:flex-nowrap md:px-6">
+      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 lg:flex-nowrap md:px-6">
         <button
           type="button"
           onClick={() => setDrawer(true)}
@@ -538,7 +538,7 @@ export default function MainHeader() {
           <LocationPicker />
         </div>
 
-        <div className="order-4 w-full min-w-0 md:order-none md:flex-1">
+        <div className="order-4 w-full min-w-0 md:order-none md:w-auto md:min-w-64 md:flex-1">
           <SearchBar categories={categories} />
         </div>
 
